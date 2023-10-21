@@ -1,7 +1,7 @@
 import sys
-from PyQt5.QtGui import *
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 # from PyQt5.QtCore import *
 # QHBoxLayout,QDockWidget,QMainWindow,QPushButton
 
@@ -11,14 +11,21 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.resize(1200,800)
 
         layout=QHBoxLayout()
+
         self.yes_butt=QPushButton("yes")
+
         self.dock=QDockWidget("settings")
         self.dock.setWidget(self.yes_butt)
-
         self.setCentralWidget(QTextEdit())
-        self.dock.resize(600, self.height())
+        # self.dock.resize(600, self.height())
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock)
-        self.setLayout(layout)
+
+        # self.menuBar().addMenu("File")
+        # self.setLayout(layout)
+
+        toolbar=self.addToolBar("管理教学计划")
+        new = QAction(QIcon('views\\tb.png'), '管理教学计划', self)
+        toolbar.addAction(new)
 
         self.translateUI(MainWindow)
 
