@@ -1,13 +1,12 @@
-from context import models
-from context import utils
-from context import controllers
-from utils import DB
 import unittest
+from context import utils
+from context import models
 
+from utils import DB
 
-class test_topoSort(unittest.TestCase):
-    def test_topoSort_with_couses_graph(self):
-        l = []
+class testGraph(unittest.TestCase):
+    def test_building_cs_courses_graph_from_DB(self):
+        l=[]
         g = models.lnkGraph.lnkGraph()
 
         db, cur = utils.DB.connect_db("../models/coursesInfo.db")
@@ -32,10 +31,3 @@ class test_topoSort(unittest.TestCase):
                 g.graph[pre].append(after)
 
         g.show_ver()
-
-        controllers.topoSort.topoSort(g)
-
-        utils.DB.close_db(db, cur)
-
-if __name__=='__main__':
-    unittest.main()
