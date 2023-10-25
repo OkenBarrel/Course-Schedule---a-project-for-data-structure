@@ -1,7 +1,7 @@
-import sys
+import os
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 # from PyQt5.QtCore import *
 # QHBoxLayout,QDockWidget,QMainWindow,QPushButton
 
@@ -23,9 +23,13 @@ class Ui_MainWindow(QMainWindow):
         # self.menuBar().addMenu("File")
         # self.setLayout(layout)
 
-        toolbar=self.addToolBar("管理教学计划")
-        new = QAction(QIcon('views\\tb.png'), '管理教学计划', self)
-        toolbar.addAction(new)
+        self.toolbar=self.addToolBar("管理教学计划")
+        new = QAction(QIcon("../views/v.png"), '新建教学计划', self)
+        self.toolbar.addAction(new)
+        open=QAction(QIcon("../views/sina.xpm"),'open',self)
+        self.toolbar.addAction(open)
+        self.toolbar.addWidget(QComboBox())
+
 
         self.translateUI(MainWindow)
 

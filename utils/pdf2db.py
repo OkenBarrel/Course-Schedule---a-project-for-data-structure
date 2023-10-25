@@ -45,8 +45,8 @@ def pdf2df(pdf):
 
     df.reset_index(drop=True, inplace=True)
     return df
-def pdf2db(path):
-    with pdfplumber.open(path) as pdf:
+def pdf2db(pdf_path,db_path):
+    with pdfplumber.open(pdf_path) as pdf:
 
         df=pdf2df(pdf)
 

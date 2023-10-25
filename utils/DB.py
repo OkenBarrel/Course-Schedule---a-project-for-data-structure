@@ -10,6 +10,8 @@ def close_db(db,cur):
     cur.close()
     db.close()
 
+
+
 # l=[]
 # db=sq.connect("../models/coursesInfo.db")
 # #E:\Files for Work\ds proj\pdftoMySQL\coursesInfo.db
