@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QFileDialog,QAction,QMainWindow,QApplication
 from views import demo
 from PyQt5.QtCore import QEvent
 from utils import files,DB,pdf2db,pre2db
+# import numpy as np
 
 db_name='test.db'
 
@@ -42,17 +43,27 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 pdf_path=open_file[0]
                 splited_path = pdf_path.rsplit('/', 1)
 
-                file_dir=splited_path[0]
-                file_name=splited_path[1]
-                db_path = '../models/' + db_name
-                if files.check_dir('../models',db_name) is False:
-                    # print('../models/'+db_name)
-                    DB.connect_db(db_path)
-                    # pdf2db.pdf2db(splited_path,db_path)
-                    print("creating new dataBase")
+                pdf_dir=splited_path[0]
+                pdf_name=splited_path[1]
 
-                else:
-                    print("existed")
+                db_path = '../models/' + db_name
+                db, cur = DB.connect_db(db_path)
+                pdf_df = pdf2db.pdf2df(pdf_path)
+
+                pdf2db.df2db(pdf_df, pdf_name.split('.', 1)[0], db)
+                pdf2db.create_user_excel(pdf_df)
+                pre2db.pre2db(pdf_name.split('.', 1)[0],"../models/prerequisites.xlsx",db)
+
+                # pdf2db.df2csv(pdf_df,pdf_name)
+
+                print("creating new dataBase")
+                DB.close_db(db, cur)
+                # if files.check_dir('../models',db_name) is False:
+                #     # print('../models/'+db_name)
+                #
+                # else:
+                #     print("existed")
+                #     return
         elif a.text()=='open':
             print("open")
 
