@@ -2,6 +2,7 @@
 import pdfplumber
 import pandas as pd
 import sqlite3 as sq
+from .files import check_dir
 
 
 def format_change(x):
@@ -57,14 +58,17 @@ def df2db(df,table_name,con):
 def df2excel(df,excel_name):
     df.to_excel(excel_name,)#encoding='utf_8_sig'
 
-def create_user_excel(df):
+def create_user_excel(df,excel_name):
 
     df_user=pd.DataFrame()
     df_user['courseID']=df['courseID']
     df_user['name'] = df['name']
     df_user['pre']=None
     # print(df_user)
-    df_user.to_excel("../models/prerequisites.xlsx",index=False)#,encoding="utf_8_sig"
+    if check_dir("../models",excel_name) is False:
+        df_user.to_excel("../models/"+excel_name,index=False)#,encoding="utf_8_sig"
+    else:
+        print('prerequisites already exist')
 
     # dff=pd.read_csv("prerequisites.csv",encoding="utf-8")
     # print(dff)

@@ -45,14 +45,15 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
                 pdf_dir=splited_path[0]
                 pdf_name=splited_path[1]
+                excel_name = pdf_name.split('.')[0] + '_prerequisites.xlsx'
 
                 db_path = '../models/' + db_name
                 db, cur = DB.connect_db(db_path)
                 pdf_df = pdf2db.pdf2df(pdf_path)
 
                 pdf2db.df2db(pdf_df, pdf_name.split('.', 1)[0], db)
-                pdf2db.create_user_excel(pdf_df)
-                pre2db.pre2db(pdf_name.split('.', 1)[0],"../models/prerequisites.xlsx",db)
+                pdf2db.create_user_excel(pdf_df,excel_name)
+                pre2db.pre2db(pdf_name.split('.', 1)[0]+'_pre',"../models/"+excel_name,db)
 
                 # pdf2db.df2csv(pdf_df,pdf_name)
 

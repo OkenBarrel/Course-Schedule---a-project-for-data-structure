@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushB
 # from PyQt5.QtCore import *
 # QHBoxLayout,QDockWidget,QMainWindow,QPushButton
 
+
 class Ui_MainWindow(QMainWindow):
     def setupUI(self,MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -37,4 +38,6 @@ class Ui_MainWindow(QMainWindow):
     def translateUI(self,MainWindow):
         _translate=QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow","大学生辅助教学计划编排系统"))
+
+# class name_it_window(QMainWindow):
 

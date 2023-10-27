@@ -9,6 +9,7 @@ def handin2list(df1):
 
 def pre2db(pre_table_name,pre_path,db):
     df1 = pd.read_excel(pre_path,index_col=False)
+    # print(df1)
 
     handin2list(df1)
 
