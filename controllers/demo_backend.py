@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QFileDialog,QAction,QMainWindow,QApplication
 
 from views import demo
 from PyQt5.QtCore import QEvent
-from utils import files,DB,files2db,pre2db
+from utils import files,DB,files2db
 # import numpy as np
 
 db_name='test.db'
