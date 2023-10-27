@@ -1,5 +1,5 @@
 import pandas as pd
-from .pdf2db import df2db
+from .files2db import df2db
 
 
 def handin2list(df1):
@@ -22,15 +22,12 @@ def pre2db(pre_table_name,pre_path,db):
 
     df1['pre'] = df1['pre'].apply(lambda x: x if isinstance(x, list) else [x])
     
-    # print(df1)
 
     for _, i in filter_df1.iterrows():
         li=i['pre']
-        # print(li)
         for e in li:
-            # print(i['courseID'],e)
             pre.loc[len(pre.index)]=[i['courseID'],e]
             
-    # print(pre)
+
     df2db(pre,pre_table_name,db)
 

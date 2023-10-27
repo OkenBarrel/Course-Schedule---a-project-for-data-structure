@@ -56,7 +56,7 @@ def df2db(df,table_name,con):
 
 
 def df2excel(df,excel_name):
-    df.to_excel(excel_name,)#encoding='utf_8_sig'
+    df.to_excel(excel_name)
 
 def create_user_excel(df,excel_name):
 
@@ -66,10 +66,36 @@ def create_user_excel(df,excel_name):
     df_user['pre']=None
     # print(df_user)
     if check_dir("../models",excel_name) is False:
-        df_user.to_excel("../models/"+excel_name,index=False)#,encoding="utf_8_sig"
+        df_user.to_excel("../models/"+excel_name,index=False)
     else:
         print('prerequisites already exist')
 
-    # dff=pd.read_csv("prerequisites.csv",encoding="utf-8")
-    # print(dff)
-    # df.to_excel(excel_writer='courses.xlsx',sheet_name='courses')
+# copied from pre2db.py
+def handin2list(df1):
+    for col in ['pre']:
+        df1[col] = df1[col].str.split(",")
+    print(df1.columns)
+
+
+def pre2db(pre_table_name, pre_path, db):
+    df1 = pd.read_excel(pre_path, index_col=False)
+    # print(df1)
+
+    handin2list(df1)
+
+    filter_df1 = df1[df1['pre'].notna()]
+    df1['courseID'] = df1['courseID'].apply(lambda x: f'{x:05d}')
+
+    pre = pd.DataFrame()
+    pre['courseID'] = []
+    pre['pre'] = []
+
+    df1['pre'] = df1['pre'].apply(lambda x: x if isinstance(x, list) else [x])
+
+    for _, i in filter_df1.iterrows():
+        li = i['pre']
+        for e in li:
+            pre.loc[len(pre.index)] = [i['courseID'], e]
+
+    df2db(pre, pre_table_name, db)
+
