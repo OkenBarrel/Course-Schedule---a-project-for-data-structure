@@ -55,9 +55,6 @@ def df2db(df,table_name,con):
     df.to_sql(name=table_name,con=con,if_exists='replace',index=False)
 
 
-def df2excel(df,excel_name):
-    df.to_excel(excel_name)
-
 def create_user_excel(df,excel_name):
 
     df_user=pd.DataFrame()

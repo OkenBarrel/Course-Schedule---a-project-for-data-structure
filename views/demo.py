@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QInputDialog,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 # from PyQt5.QtCore import *
 # QHBoxLayout,QDockWidget,QMainWindow,QPushButton
 
@@ -39,5 +39,9 @@ class Ui_MainWindow(QMainWindow):
         _translate=QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow","大学生辅助教学计划编排系统"))
 
-# class name_it_window(QMainWindow):
+
+
+    def translateUI(self,name_it_window):
+        _translate=QCoreApplication.translate
+        name_it_window.setWindowTitle(_translate('name_it_window','输入窗口'))
 
