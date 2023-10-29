@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QWidget,QTabBar,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 # from PyQt5.QtCore import *
 # QHBoxLayout,QDockWidget,QMainWindow,QPushButton
 
@@ -19,8 +19,23 @@ class Ui_MainWindow(QMainWindow):
         self.dock.setWidget(self.yes_butt)
 
         self.tabArea=QTabWidget()
-        self.tabArea.addTab(QGroupBox('term1'),'testing')
-        self.tabArea.addTab(QGroupBox('term2'), 'another')
+
+        # self.tabArea.addTab(QWidget(),'testing')
+        # tab=self.tabArea.currentWidget()
+        # tab_layout=QHBoxLayout()
+        # tab_layout.addWidget(QGroupBox('what'))
+        # tab_layout.addWidget(QGroupBox('the'))
+        # tab_layout.addWidget(QGroupBox('fuck'))
+        # tab.setLayout(tab_layout)
+
+        # gb=self.tabArea.currentWidget()
+        # vbox=QVBoxLayout()
+        #
+        # for i in range(20):
+        #     vbox.addWidget(QRadioButton("what"))
+        # gb.setLayout(vbox)
+        #
+        # self.tabArea.addTab(QGroupBox('term2'), 'another')
         self.tabArea.setTabsClosable(True)
 
         self.setCentralWidget(self.tabArea)
@@ -52,7 +67,6 @@ class Ui_MainWindow(QMainWindow):
             reply=msg.information(self, title, text)
         elif type=='question':
             reply = msg.question(title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-
         return reply
 
     def warning_popup(self,title,text):
@@ -64,13 +78,35 @@ class Ui_MainWindow(QMainWindow):
     def question_popup(self,title,text):
         return self.msg_popup(title,text,'question')
 
-    def input_popup(self,title,prompt,default,input_method='text'):
+    def input_popup(self, title, prompt, default, type):
         inp = QInputDialog()
-        if input_method=='item':
+        if type== 'item':
             res,ok=inp.getItem(self,title,prompt,default,0,False)
             if ok and res:
                 print(res)
-        else:
+        elif type=='text':
             res, ok = inp.getText(self, title, prompt, QLineEdit.Normal, default)
         return ok,res
+
+    def get_text_input(self,title,prompt,default):
+        return self.input_popup(title,prompt,default,'text')
+
+    def get_item_input(self,title,prompt,item_list):
+        return self.input_popup(title,prompt,item_list,'item')
+    def display_plan(self,plan,tab_name):
+        self.tabArea.addTab(QWidget(),tab_name)
+        cnt=1
+        tab_layout=QHBoxLayout()
+        for ele in plan:
+            gb=QGroupBox('term'+str(cnt))
+            gb_layout=QVBoxLayout()
+            cnt+=1
+            for el in ele:
+                print(el)
+                gb_layout.addWidget(QRadioButton(el.name))
+            gb.setLayout(gb_layout)
+            tab_layout.addWidget(gb)
+        self.tabArea.currentWidget().setLayout(tab_layout)
+        print("done")
+
 

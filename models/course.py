@@ -9,4 +9,4 @@ class course:
         self.compulsory=compulsory
 
     def __str__(self):
-        return "ID:{} name:{} credit:{} department:{} compulsory:{}".format(self.courseID,self.name,self.credit,self.department,self.compulsory=='1')
+        return "ID:{} name:{} credit:{} department:{} compulsory:{}".format(self.courseID,self.name,self.credit,self.department,self.compulsory==1)

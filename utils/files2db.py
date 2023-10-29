@@ -1,7 +1,8 @@
 # from PyPDF2 import PdfReader
 import pdfplumber
 import pandas as pd
-from .files import check_dir
+# from .files import check_dir
+import os
 
 
 # def format_change(x):
@@ -61,7 +62,8 @@ def create_user_excel(df,excel_name):
     df_user['name'] = df['name']
     df_user['pre']=None
     # print(df_user)
-    if check_dir("../models",excel_name) is False:
+    if os.path.exists("../models/"+excel_name) is False:
+    # if check_dir("../models",excel_name) is False:
         df_user.to_excel("../models/"+excel_name,index=False)
     else:
         print('prerequisites already exist')

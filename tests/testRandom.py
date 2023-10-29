@@ -12,4 +12,5 @@ word='word'
 # print(word.split(' '))
 l=['请选择']
 li=['what','the','fuck']
-print(type(l+li))
+# p=print("hello")
+print(p)
