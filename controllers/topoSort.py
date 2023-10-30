@@ -2,6 +2,7 @@ from models.Queue import *
 
 UNVISITED=0
 VISITED=1
+# FIXME topoSort: need to arrange courses in graph by prerequisites num
 def topoSort(lnkGraph):
     res=[]
     l=len(lnkGraph.graph)
@@ -28,21 +29,9 @@ def topoSort(lnkGraph):
             res.append(temp)
             temp= [lnkGraph.graph[ver].head.ele]
         # lnkGraph.del_ver(ver)
-        if(lnkGraph.graph[ver].head.ele.name=='新生研讨课'):
-            print("新生研讨")
-            for ele in temp:
-                print(ele)
-                # print('list:')
-                # for el in ele:
-                #     print(el)
-            print("新生研讨个屁")
         visited[ver]=VISITED
     res.append(temp)
     for ind in visited:
         if ind==UNVISITED:
             print("Error!!!")
-    # for ele in res:
-    #     print("list:")
-    #     for el in ele:
-    #         print(el)
     return res

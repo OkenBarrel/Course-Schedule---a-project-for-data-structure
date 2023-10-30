@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QWidget,QTabBar,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QGridLayout,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 # from PyQt5.QtCore import *
 # QHBoxLayout,QDockWidget,QMainWindow,QPushButton
 
@@ -10,6 +10,7 @@ class Ui_MainWindow(QMainWindow):
     def setupUI(self,MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1200,800)
+        # MainWindow.setFixedSize(1200,800)
 
         layout=QHBoxLayout()
 
@@ -19,31 +20,13 @@ class Ui_MainWindow(QMainWindow):
         self.dock.setWidget(self.yes_butt)
 
         self.tabArea=QTabWidget()
+        print('tabArea h = '+str(self.tabArea.size().height())+'  w = '+str(self.tabArea.size().width()))
 
-        # self.tabArea.addTab(QWidget(),'testing')
-        # tab=self.tabArea.currentWidget()
-        # tab_layout=QHBoxLayout()
-        # tab_layout.addWidget(QGroupBox('what'))
-        # tab_layout.addWidget(QGroupBox('the'))
-        # tab_layout.addWidget(QGroupBox('fuck'))
-        # tab.setLayout(tab_layout)
-
-        # gb=self.tabArea.currentWidget()
-        # vbox=QVBoxLayout()
-        #
-        # for i in range(20):
-        #     vbox.addWidget(QRadioButton("what"))
-        # gb.setLayout(vbox)
-        #
-        # self.tabArea.addTab(QGroupBox('term2'), 'another')
         self.tabArea.setTabsClosable(True)
 
         self.setCentralWidget(self.tabArea)
         # self.dock.resize(600, self.height())
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock)
-
-        # self.menuBar().addMenu("File")
-        # self.setLayout(layout)
 
         self.toolbar=self.addToolBar("Toolbar")
         new = QAction(QIcon("../views/v.png"), '导入课程', self)
@@ -93,20 +76,35 @@ class Ui_MainWindow(QMainWindow):
 
     def get_item_input(self,title,prompt,item_list):
         return self.input_popup(title,prompt,item_list,'item')
+
+    # TODO display_plan: display plan for every term
+    # TODO display_plan: compulsory courses should be in different style
     def display_plan(self,plan,tab_name):
-        self.tabArea.addTab(QWidget(),tab_name)
+        self.tabArea.addTab(QScrollArea(),tab_name)
+        wgt=QWidget()
         cnt=1
         tab_layout=QHBoxLayout()
+        # tab_layout=QGridLayout()
         for ele in plan:
             gb=QGroupBox('term'+str(cnt))
             gb_layout=QVBoxLayout()
             cnt+=1
             for el in ele:
-                print(el)
-                gb_layout.addWidget(QRadioButton(el.name))
+                check=QCheckBox(el.name)
+                if el.compulsory:
+                    check.setStyleSheet('''QCheckBox{color:red;}''')
+                    check.setChecked(True)
+                gb_layout.addWidget(check)
             gb.setLayout(gb_layout)
+            gb.setFixedSize(300,680)
+            # print('gb h = ' + str(gb.size().height()) + '  w = ' + str(gb.size().width()))
             tab_layout.addWidget(gb)
-        self.tabArea.currentWidget().setLayout(tab_layout)
+        # print('locate widget:')
+        print(self.tabArea.currentWidget().widget())
+        wgt.setLayout(tab_layout)
+        # print('wgt h = '+str(wgt.size().height())+'  w = '+str(wgt.size().width()))
+        # print('scroll h = '+str(self.tabArea.currentWidget().size().height())+'  w = '+str(self.tabArea.currentWidget().size().width()))
+        self.tabArea.currentWidget().setWidget(wgt)
         print("done")
 
 

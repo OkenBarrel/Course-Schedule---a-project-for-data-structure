@@ -95,12 +95,13 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             self.info_popup(msg2_title, msg2_text)
             return
         msg3_title = '提示'
-        msg3_text = '先修课信息导入成功，可以开始创建教学计划啦！'
+        msg3_text = '导入成功，\n可以开始创建教学计划啦！'
         self.info_popup(msg3_title, msg3_text)
         self.major_list.append(major_name)
         # DB.close_db(db, cur)
         return
 
+    # TODO create_plan: merge 2 pop-up window
     def create_plan(self):
         input_title = '请选择'
         input_prompt = '建立教学计划的专业：'
@@ -114,12 +115,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         self.build_courses_graph(item)
         res=topoSort(self.current_course_graph)
-        self.current_course_graph.show_ver()
-        self.display_plan(res,'testing')
-        for ele in res:
-            print('list:')
-            for el in ele:
-                print(el)
+        # self.current_course_graph.show_ver()
+        self.display_plan(res,plan_name)
 
 
 
