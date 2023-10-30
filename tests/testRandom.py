@@ -10,7 +10,8 @@ word='word'
 # db_name='info.db'
 # files.check_dir("../models",'prerequisites.xlsx')
 # print(word.split(' '))
-l=['请选择']
-li=['what','the','fuck']
+s='what'
+n=2
 # p=print("hello")
-print(p)
+print(s[0:n])
+print(s[n:])

@@ -1,9 +1,8 @@
 import os
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import Qt,QCoreApplication
 from PyQt5.QtWidgets import QGridLayout,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
-# from PyQt5.QtCore import *
-# QHBoxLayout,QDockWidget,QMainWindow,QPushButton
+from utils import formatting
 
 
 class Ui_MainWindow(QMainWindow):
@@ -77,8 +76,8 @@ class Ui_MainWindow(QMainWindow):
     def get_item_input(self,title,prompt,item_list):
         return self.input_popup(title,prompt,item_list,'item')
 
-    # TODO display_plan: display plan for every term
-    # TODO display_plan: compulsory courses should be in different style
+    # TODO display_plan: checkBox need Word Wrap
+    # TODO display_plan: compulsory courses should be in better style
     def display_plan(self,plan,tab_name):
         self.tabArea.addTab(QScrollArea(),tab_name)
         wgt=QWidget()
@@ -89,19 +88,24 @@ class Ui_MainWindow(QMainWindow):
             gb=QGroupBox('term'+str(cnt))
             gb_layout=QVBoxLayout()
             cnt+=1
+            gb.setFixedSize(220, 680)
             for el in ele:
-                check=QCheckBox(el.name)
+                check=QCheckBox()
+                wraped_word=formatting.word_wrap(el.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
+                check.setText(wraped_word)
+                # check.setLineWrap(True)
                 if el.compulsory:
                     check.setStyleSheet('''QCheckBox{color:red;}''')
                     check.setChecked(True)
                 gb_layout.addWidget(check)
             gb.setLayout(gb_layout)
-            gb.setFixedSize(300,680)
+
             # print('gb h = ' + str(gb.size().height()) + '  w = ' + str(gb.size().width()))
             tab_layout.addWidget(gb)
         # print('locate widget:')
-        print(self.tabArea.currentWidget().widget())
+        # print(self.tabArea.currentWidget().widget())
         wgt.setLayout(tab_layout)
+        # print(check.font().pixelSize())
         # print('wgt h = '+str(wgt.size().height())+'  w = '+str(wgt.size().width()))
         # print('scroll h = '+str(self.tabArea.currentWidget().size().height())+'  w = '+str(self.tabArea.currentWidget().size().width()))
         self.tabArea.currentWidget().setWidget(wgt)
