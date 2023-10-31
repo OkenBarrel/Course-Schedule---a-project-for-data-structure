@@ -40,8 +40,15 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     def connect_sigs(self):
         # self.yes_butt.clicked.connect(self.yes_butt_clicked)
-        self.toolbar.actionTriggered[QAction].connect(self.toolbar_triggered)
+        # self.toolbar.actionTriggered[QAction].connect(self.toolbar_triggered)
+        self.mng.triggered[QAction].connect(self.menu_triggered)
 
+    def menu_triggered(self,q):
+        if q.text()=='import_courses':
+            print("导入课程")
+        elif q.text()=='delete_courses':
+            print("删除课程")
+        return
     def toolbar_triggered(self,a):
         print("toolbar triggered")
         if a.text()=="导入课程":
@@ -95,7 +102,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             self.info_popup(msg2_title, msg2_text)
             return
         msg3_title = '提示'
-        msg3_text = '导入成功，\n可以开始创建教学计划啦！'
+        msg3_text = '导入成功！'
         self.info_popup(msg3_title, msg3_text)
         self.major_list.append(major_name)
         # DB.close_db(db, cur)

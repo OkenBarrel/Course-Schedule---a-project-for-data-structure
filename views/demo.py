@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QGridLayout,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QMenu,QMenuBar,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
 
 
@@ -18,6 +18,14 @@ class Ui_MainWindow(QMainWindow):
         self.dock=QDockWidget("settings")
         self.dock.setWidget(self.yes_butt)
 
+
+        self.mng=self.menuBar().addMenu('管理专业课程')
+        # import_courses = QAction('导入课程', self)
+        self.mng.addAction('import_courses')
+        # delete_courses=QAction('删除课程',self)
+        self.mng.addAction('delete_courses')
+        self.menuBar().addMenu('管理教学计划')
+
         self.tabArea=QTabWidget()
         print('tabArea h = '+str(self.tabArea.size().height())+'  w = '+str(self.tabArea.size().width()))
 
@@ -27,12 +35,12 @@ class Ui_MainWindow(QMainWindow):
         # self.dock.resize(600, self.height())
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock)
 
-        self.toolbar=self.addToolBar("Toolbar")
-        new = QAction(QIcon("../views/v.png"), '导入课程', self)
-        self.toolbar.addAction(new)
-        open=QAction(QIcon("../views/sina.xpm"),'open',self)
-        self.toolbar.addAction(open)
-        self.toolbar.addWidget(QComboBox())
+        # self.toolbar=self.addToolBar("Toolbar")
+        # new = QAction(QIcon("../views/v.png"), '导入课程', self)
+        # self.toolbar.addAction(new)
+        # open=QAction(QIcon("../views/sina.xpm"),'open',self)
+        # self.toolbar.addAction(open)
+        # self.toolbar.addWidget(QComboBox())
 
         self.translateUI(MainWindow)
 
@@ -76,7 +84,6 @@ class Ui_MainWindow(QMainWindow):
     def get_item_input(self,title,prompt,item_list):
         return self.input_popup(title,prompt,item_list,'item')
 
-    # TODO display_plan: checkBox need Word Wrap
     # TODO display_plan: compulsory courses should be in better style
     def display_plan(self,plan,tab_name):
         self.tabArea.addTab(QScrollArea(),tab_name)
