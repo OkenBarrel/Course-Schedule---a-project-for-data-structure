@@ -1,3 +1,4 @@
+import sqlite3
 import sqlite3 as sq
 from .files import check_dir
 
@@ -30,5 +31,27 @@ def check_table_empty(cur,table_name):
     cur.execute(sql)
     count=cur.fetchone()[0]
     return count==0
+def plan2DB(plan,con,plan_id):
+    cursor=con.cursor()
+    course_list=[]
+    l=len(plan)
+    for i in range(l):
+        for c in plan[i]:
+            course_list.append(tuple(plan_id,i+1,c.courseID))
+    if not check_table_exist(con,'plans'):
+        cursor.execute('''
+            create table plans(
+             plan_id integer,
+             term integer,
+             course_id text
+        )''')
+    sql='insert into plans (plan_id,term,courses_id) values (?,?,?);'
+    try:
+        cursor.executemany(sql,course_list)
+    except sqlite3.Error as e:
+        print(e)
+        con.rollback()
+        return False
+    return True
 
 

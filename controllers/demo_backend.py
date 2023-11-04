@@ -1,6 +1,6 @@
 import os.path
 from context import models
-from PyQt5.QtWidgets import QMessageBox,QFileDialog,QAction,QMainWindow,QApplication
+from PyQt5.QtWidgets import QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow,QApplication
 from views import demo
 from PyQt5.QtCore import QEvent
 from utils import files,DB,files2db
@@ -31,8 +31,12 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     def eventFilter(self,watched,event):
         if watched==self.yes_butt:
-            if event.type()==QEvent.MouseButtonPress:
+            if event.type()==QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
                 print("yes!!")
+                print(self.tabArea.currentWidget().widget())
+                wgt=self.tabArea.currentWidget().widget()
+                for child in wgt.findChildren(QGroupBox):
+                    print(child.title())
                 return True
 
         return False
@@ -40,14 +44,33 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     def connect_sigs(self):
         # self.yes_butt.clicked.connect(self.yes_butt_clicked)
-        # self.toolbar.actionTriggered[QAction].connect(self.toolbar_triggered)
-        self.mng.triggered[QAction].connect(self.menu_triggered)
+        self.toolbar.actionTriggered[QAction].connect(self.toolbar_triggered)
+        self.tabArea.tabCloseRequested.connect(self.tab_close_triggered)
+        # self.mng.triggered[QAction].connect(self.menu_triggered)
+        # self.mng_plan.triggered[QAction].connect(self.menu_triggered)
 
     def menu_triggered(self,q):
         if q.text()=='import_courses':
             print("导入课程")
+            open_file = QFileDialog.getOpenFileName(self, '选择对应教学计划pdf文件', '', 'PDFs (*.pdf)')
+            if not open_file[0]:
+                return
+            pdf_path = open_file[0]
+            self.import_courses(pdf_path)
         elif q.text()=='delete_courses':
             print("删除课程")
+        elif q.text()=='创建计划':
+            print("creating plan")
+            if len(self.major_list)==0:
+                # print("zero")
+                msg3_title='警告'
+                msg3_text='请先导入专业课程信息'
+                self.info_popup(msg3_title,msg3_text)
+                return
+            self.create_plan()
+        elif q.text()=='删除计划':
+            print("deleting plan")
+
         return
     def toolbar_triggered(self,a):
         print("toolbar triggered")
@@ -108,7 +131,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         # DB.close_db(db, cur)
         return
 
-    # TODO create_plan: merge 2 pop-up window
+    # TODO create_plan: maybe merge 2 pop-up window
     def create_plan(self):
         input_title = '请选择'
         input_prompt = '建立教学计划的专业：'
@@ -121,11 +144,9 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         if not input3_ok:
             return
         self.build_courses_graph(item)
-        res=topoSort(self.current_course_graph)
+        plan=topoSort(self.current_course_graph)
         # self.current_course_graph.show_ver()
-        self.display_plan(res,plan_name)
-
-
+        self.display_plan(plan,plan_name)
 
     def build_courses_graph(self, major_name):
         g=lnkGraph.lnkGraph()
@@ -144,9 +165,10 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             after = g.find_ver_by_ID(afterID)
             if pre and after:  # out degree (after course) in link
                 g.graph[pre].append(after)
-            # print(row)
-        # g.show_ver()
         self.current_course_graph=g
+
+    def tab_close_triggered(self, index):
+        self.tabArea.removeTab(index)
 
     def yes_butt_clicked(self):
         print("yes!")

@@ -6,12 +6,12 @@ from utils import files
 
 path="E:/Files for Work/ds proj/courseSchedule/views"
 word='word'
-# s=path.rsplit('/',1)
-# db_name='info.db'
-# files.check_dir("../models",'prerequisites.xlsx')
-# print(word.split(' '))
-s='what'
-n=2
-# p=print("hello")
-print(s[0:n])
-print(s[n:])
+dic={1:'what',2:'the',3:'fuck'}
+li=[[1,2,3,4,5],[6,7,8,9,0]]
+res=[]
+for i in li:
+    res.append([x for x in i])
+
+# for i in res:
+print(res)
+# print(res)

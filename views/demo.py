@@ -19,12 +19,14 @@ class Ui_MainWindow(QMainWindow):
         self.dock.setWidget(self.yes_butt)
 
 
-        self.mng=self.menuBar().addMenu('管理专业课程')
-        # import_courses = QAction('导入课程', self)
-        self.mng.addAction('import_courses')
-        # delete_courses=QAction('删除课程',self)
-        self.mng.addAction('delete_courses')
-        self.menuBar().addMenu('管理教学计划')
+        # self.mng=self.menuBar().addMenu('管理专业课程')
+        # # import_courses = QAction('导入课程', self)
+        # self.mng.addAction('import_courses')
+        # # delete_courses=QAction('删除课程',self)
+        # self.mng.addAction('delete_courses')
+        # self.mng_plan=self.menuBar().addMenu('管理教学计划')
+        # self.mng_plan.addAction('创建计划')
+        # self.mng_plan.addAction('删除计划')
 
         self.tabArea=QTabWidget()
         print('tabArea h = '+str(self.tabArea.size().height())+'  w = '+str(self.tabArea.size().width()))
@@ -35,12 +37,12 @@ class Ui_MainWindow(QMainWindow):
         # self.dock.resize(600, self.height())
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock)
 
-        # self.toolbar=self.addToolBar("Toolbar")
-        # new = QAction(QIcon("../views/v.png"), '导入课程', self)
-        # self.toolbar.addAction(new)
-        # open=QAction(QIcon("../views/sina.xpm"),'open',self)
-        # self.toolbar.addAction(open)
-        # self.toolbar.addWidget(QComboBox())
+        self.toolbar=self.addToolBar("Toolbar")
+        new = QAction(QIcon("../views/v.png"), '导入课程', self)
+        self.toolbar.addAction(new)
+        open=QAction(QIcon("../views/sina.xpm"),'open',self)
+        self.toolbar.addAction(open)
+        self.toolbar.addWidget(QComboBox())
 
         self.translateUI(MainWindow)
 
@@ -89,8 +91,8 @@ class Ui_MainWindow(QMainWindow):
         self.tabArea.addTab(QScrollArea(),tab_name)
         wgt=QWidget()
         cnt=1
-        tab_layout=QHBoxLayout()
-        # tab_layout=QGridLayout()
+        wgt_layout=QHBoxLayout()
+        # wgt_layout=QGridLayout()
         for ele in plan:
             gb=QGroupBox('term'+str(cnt))
             gb_layout=QVBoxLayout()
@@ -98,9 +100,8 @@ class Ui_MainWindow(QMainWindow):
             gb.setFixedSize(220, 680)
             for el in ele:
                 check=QCheckBox()
-                wraped_word=formatting.word_wrap(el.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
-                check.setText(wraped_word)
-                # check.setLineWrap(True)
+                wrapped_word=formatting.word_wrap(el.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
+                check.setText(wrapped_word)
                 if el.compulsory:
                     check.setStyleSheet('''QCheckBox{color:red;}''')
                     check.setChecked(True)
@@ -108,10 +109,10 @@ class Ui_MainWindow(QMainWindow):
             gb.setLayout(gb_layout)
 
             # print('gb h = ' + str(gb.size().height()) + '  w = ' + str(gb.size().width()))
-            tab_layout.addWidget(gb)
+            wgt_layout.addWidget(gb)
         # print('locate widget:')
         # print(self.tabArea.currentWidget().widget())
-        wgt.setLayout(tab_layout)
+        wgt.setLayout(wgt_layout)
         # print(check.font().pixelSize())
         # print('wgt h = '+str(wgt.size().height())+'  w = '+str(wgt.size().width()))
         # print('scroll h = '+str(self.tabArea.currentWidget().size().height())+'  w = '+str(self.tabArea.currentWidget().size().width()))
