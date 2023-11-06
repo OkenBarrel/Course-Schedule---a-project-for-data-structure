@@ -18,8 +18,4 @@ config={
     }
     ]
 }
-for i in config['plans']:
-    if i['name']=='fuck':
-        print(i)
-        i['id']+=300
-        print(i)
+print()

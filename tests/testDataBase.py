@@ -38,5 +38,17 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(res)
         DB.close_db(db, cur)
 
+    def test_database(self):
+        major_name='计算机'
+        plan_id=1
+        db,cur=DB.connect_db(self.db_path)
+        cur.execute('select count(*) from plans where plan_id='+str(plan_id))
+        print(cur.fetchone())
+        cursor = cur.execute('''select major.courseID,major.name,major.final,major.credit,major.department,major.compulsory
+                                from plans
+                                join {} as major on plans.course_id=major.courseID and plans.plan_id={};'''.format(major_name,plan_id))
+        for row in cursor:
+            print(row[0]+' '+row[1]+' '+row[2]+' '+str(row[5]==1))
+
 if __name__ == '__main__':
     unittest.main()

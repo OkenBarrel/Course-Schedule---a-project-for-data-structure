@@ -1,6 +1,8 @@
 import sqlite3
 import sqlite3 as sq
+# from context import models
 from .files import check_dir
+from models import course
 
 
 def connect_db(path):
@@ -39,18 +41,21 @@ def plan2DB(plan,con,cur,plan_id):
     l=len(plan)
     for i in range(l):
         for c in plan[i]:
-            if isinstance(c,str):
-                course_list.append(tuple([plan_id, i + 1, c]))
-            else:
-                course_list.append(tuple([plan_id,i+1,c.courseID]))
+            course_list.append(tuple([plan_id, i + 1, c[0],c[1]]))
+
+            # if isinstance(c,str):
+            #     course_list.append(tuple([plan_id, i + 1, c]))
+            # else:
+            #     course_list.append(tuple([plan_id,i+1,c.courseID]))
     if not check_table_exist(cur,'plans'):
         cursor.execute('''
             create table plans(
              plan_id integer,
              term integer,
-             course_id text
+             course_id text,
+             chosen integer
         )''')
-    sql='insert into plans (plan_id,term,course_id) values (?,?,?);'
+    sql='insert into plans (plan_id,term,course_id,chosen) values (?,?,?,?);'
     try:
         cursor.execute('select count(*) from plans where plan_id='+str(plan_id)+';')
         count=cursor.fetchone()[0]
@@ -59,15 +64,33 @@ def plan2DB(plan,con,cur,plan_id):
             cursor.execute('delete from plans where plan_id='+str(plan_id)+';')
         cursor.executemany(sql,course_list)
     except sqlite3.Error as e:
-        print('error:'+e)
+        print('error:')
+        print(e)
         con.rollback()
         return False
     con.commit()
     return True
 
-# TODO DB2plan: get plan from database
-def DB2plan(plan_id,cur):
 
-    pass
+# TODO DB2plan: get plan from database
+def DB2plan(plan_id,cur,major_name):
+    plan=[]
+    cursor=cur.execute('''select major.courseID,major.name,major.final,major.credit,major.department,major.compulsory,plans.chosen,plans.term
+                        from plans
+                        join {} as major on plans.course_id=major.courseID and plans.plan_id={};'''.format(major_name,plan_id))
+    print('in DB3plan now!!')
+    temp=[]
+    for row in cursor:
+        print(row[0]+' '+row[1]+' '+row[3])
+        c=course.course(row[0],row[1],row[2],row[3],row[4],row[5])
+        if row[7]>len(plan)+1:
+            plan.append(temp)
+            temp=[]
+        temp.append(tuple([c,row[6],row[7]]))
+    plan.append(temp)
+    return plan
+
+
+
 
 

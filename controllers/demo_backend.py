@@ -16,6 +16,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     cur=None
     id_to_course={}
     course_to_id={}
+    current_plan={}
+    tabs=[]
     current_course_graph=None
     working_dir=None
     config={}
@@ -38,12 +40,11 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         plan=[]
         for child in widget.findChildren(QGroupBox):
             temp=[]
-            print(child.title())
+            # print(child.title())
             for grand in child.findChildren(QCheckBox):
-                if grand.checkState():
-                    temp.append(self.course_to_id[grand.text().replace('\n','')])
-                plan.append(temp)
-                print(grand.text().replace('\n', '') + " " + str(grand.checkState()))
+                temp.append((self.course_to_id[grand.text().replace('\n','')],grand.checkState()))
+                # print(grand.text().replace('\n', '') + " " + str(grand.checkState()))
+            plan.append(temp)
         return plan
 
     # TODO save_plan_to_database: NOT Done
@@ -51,15 +52,34 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         if watched==self.yes_butt:
             if event.type()==QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
                 print("yes!!")
-                # print(self.tabArea.currentWidget().widget())
                 wgt=self.tabArea.currentWidget().widget()
                 plan=self.get_plan_from_widget(wgt)
                 tab=self.tabArea
                 plan_name=tab.tabText(tab.currentIndex())
+                print(plan_name)
+                select_plan = self.toolbar.findChild(QComboBox)
+                select_plan.addItem(plan_name)
+                plan_in_config=False
+                for p in self.config['plans']:
+                    if p['name']==plan_name:
+                        plan_in_config=True
+                        break
+                if not plan_in_config:
+                    plan_id = self.config['global_id'] + 1
+                    self.config['global_id'] += 1
+                    self.config['plans'].append({
+                        'id': plan_id,
+                        'name': plan_name,
+                        'major':self.current_plan[plan_name]
+                    })
+                    major_name=self.current_plan[plan_name]
+
                 for p in self.config['plans']:
                     if p['name']==plan_name:
                         plan_id=p['id']
+                        # major_name=p['major']
                 if DB.plan2DB(plan,self.db,self.cur,plan_id):
+                    # del self.current_plan[plan_name]
                     return True
                 else:
                     return False
@@ -70,23 +90,32 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     def _connect_sigs(self):
         # self.yes_butt.clicked.connect(self.yes_butt_clicked)
         self.toolbar.actionTriggered[QAction].connect(self.toolbar_triggered)
-        self.toolbar.findChild(QComboBox).currentIndexChanged.connect(self.combo_triggered)
-        self.toolbar.findChild(QComboBox).activated.connect(self.activated_triggered)
+        # self.toolbar.findChild(QComboBox).currentIndexChanged.connect(self.combo_triggered)
+        self.toolbar.findChild(QComboBox).activated.connect(self.combo_activated_triggered)
         self.tabArea.tabCloseRequested.connect(self.tab_close_triggered)
+        self.tabArea.currentChanged.connect(self.set_major)
         # self.mng.triggered[QAction].connect(self.menu_triggered)
         # self.mng_plan.triggered[QAction].connect(self.menu_triggered)
 
-    def combo_triggered(self,index):
-        print('combo '+str(index))
+    # def combo_triggered(self,index):
+    #     print('combo '+str(index))
+    def set_major(self,index):
+        print('changing now!!!'+str(index))
 
     # TODO activated_triggered: select plan for viewing
-    def activated_triggered(self,index):
+    def combo_activated_triggered(self, index):
         combo=self.toolbar.findChild(QComboBox)
         plan_name=combo.itemText(index)
         print('activated '+str(index)+' '+plan_name)
         for p in self.config['plans']:
             if p['name']==plan_name:
-                DB.DB2plan(p['id'])
+                plan_id=p['id']
+                major_name=p['major']
+                break
+        plan=DB.DB2plan(plan_id,self.db,major_name)
+        self.tabs.append(plan_name)
+        self.display_plan(plan,plan_name,True)
+        return
 
     # def menu_triggered(self,q):
     #     if q.text()=='import_courses':
@@ -175,29 +204,35 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         return
 
     # TODO create_plan: maybe merge 2 pop-up window
+    # FIXME create_plan: bug when create new plan that already exists
     def create_plan(self):
         input_title = '请选择'
         input_prompt = '建立教学计划的专业：'
-        input2_ok, item = self.get_item_input(input_title, input_prompt, self.config['majors'])
-        if not input2_ok or not item:
+        input2_ok, major_name = self.get_item_input(input_title, input_prompt, self.config['majors'])
+        if not input2_ok or not major_name:
             return
         input3_title='请输入'
         input3_prompt='计划名称：'
         input3_ok,plan_name=self.get_text_input(input3_title,input3_prompt,'default')
         if not input3_ok:
             return
-        self.build_courses_graph(item)
+        if plan_name in self.tabs:
+            num=self.tabArea.count()
+            for index in range(num):
+                if self.tabArea.tabText(index)==plan_name:
+                    self.tabArea.setCurrentIndex(index)
+                    return
+        self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
-        select_plan=self.toolbar.findChild(QComboBox)
-        select_plan.addItem(plan_name)
-        plan_id=self.config['global_id']+1
-        self.config['global_id']+=1
-        self.config['plans'].append({
-            'id':plan_id,
-            'name':plan_name
-        })
+        combo=self.toolbar.findChild(QComboBox)
+        combo.addItem(plan_name)
+        # print('in creating plan:'+plan_name)
+        self.current_plan[plan_name]=major_name
+        self.tabs.append(plan_name)
         self.display_plan(plan,plan_name)
-        DB.plan2DB(plan,self.db,self.cur,plan_id)
+
+        # put all course into database
+        # DB.plan2DB(plan,self.db,self.cur,plan_id)
 
     def build_courses_graph(self, major_name):
         g=lnkGraph.lnkGraph()
@@ -226,7 +261,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 'majors':[],
                 'plans':[]
             }
-            print(self.working_dir+'/models/config.json')
+            # print(self.working_dir+'/models/config.json')
             with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
                 json.dump(self.config,config)
         else:
@@ -245,7 +280,9 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     def closeEvent(self, event):
         print('we are closing!!!')
         self.update_config()
+        DB.close_db(self.db,self.cur)
         event.accept()
+
     def update_config(self):
         with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
             json.dump(self.config,config)
@@ -254,8 +291,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     def tab_close_triggered(self, index):
         self.tabArea.removeTab(index)
 
-    def yes_butt_clicked(self):
-        print("yes!")
+    # def yes_butt_clicked(self):
+    #     print("yes!")
 
 
 # if __name__=='__main__':

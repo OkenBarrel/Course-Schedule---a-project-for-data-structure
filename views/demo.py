@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QMenu,QMenuBar,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QLayout,QLabel,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
 
 
@@ -14,9 +14,19 @@ class Ui_MainWindow(QMainWindow):
         layout=QHBoxLayout()
 
         self.yes_butt=QPushButton("yes")
+        self.no_butt = QPushButton("no")
+        self.major_lable=QLabel('none yet')
 
         self.dock=QDockWidget("settings")
-        self.dock.setWidget(self.yes_butt)
+        wgt=QWidget()
+        dock_layout=QVBoxLayout()
+        dock_layout.addWidget(self.yes_butt)
+        dock_layout.addWidget(self.no_butt)
+        dock_layout.addWidget(self.major_lable)
+        # self.dock.setWidget(self.yes_butt)
+        wgt.setLayout(dock_layout)
+        self.dock.setWidget(wgt)
+
 
 
         # self.mng=self.menuBar().addMenu('管理专业课程')
@@ -87,12 +97,13 @@ class Ui_MainWindow(QMainWindow):
         return self.input_popup(title,prompt,item_list,'item')
 
     # TODO display_plan: compulsory courses should be in better style
-    def display_plan(self,plan,tab_name):
-        self.tabArea.addTab(QScrollArea(),tab_name)
+    def display_plan(self,plan,tab_name,chosen=False):
+        new_tab=QScrollArea()
+        self.tabArea.addTab(new_tab,tab_name)
+        self.tabArea.setCurrentWidget(new_tab)
         wgt=QWidget()
         cnt=1
         wgt_layout=QHBoxLayout()
-        # wgt_layout=QGridLayout()
         for ele in plan:
             gb=QGroupBox('term'+str(cnt))
             gb_layout=QVBoxLayout()
@@ -100,14 +111,22 @@ class Ui_MainWindow(QMainWindow):
             gb.setFixedSize(220, 680)
             for el in ele:
                 check=QCheckBox()
-                wrapped_word=formatting.word_wrap(el.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
+                if chosen:
+                    wrapped_word=formatting.word_wrap(el[0].name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
+                else:
+                    wrapped_word=formatting.word_wrap(el.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
                 check.setText(wrapped_word)
-                if el.compulsory:
-                    check.setStyleSheet('''QCheckBox{color:red;}''')
-                    check.setChecked(True)
+                if chosen:
+                    if el[0].compulsory:
+                        check.setStyleSheet('''QCheckBox{color:red;}''')
+                    if el[1]:
+                        check.setChecked(True)
+                else:
+                    if el.compulsory:
+                        check.setStyleSheet('''QCheckBox{color:red;}''')
+                        check.setChecked(True)
                 gb_layout.addWidget(check)
             gb.setLayout(gb_layout)
-
             # print('gb h = ' + str(gb.size().height()) + '  w = ' + str(gb.size().width()))
             wgt_layout.addWidget(gb)
         # print('locate widget:')

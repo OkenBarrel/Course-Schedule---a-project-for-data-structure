@@ -32,7 +32,6 @@ class MyTestCase(unittest.TestCase):
     def test_all(self):
         self.app.exec_()
 
-
         # self.assertEqual(True, False)  # add assertion here
 
 
