@@ -1,88 +1,130 @@
 import os.path
 from context import models
-from PyQt5.QtWidgets import QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow,QApplication
+from PyQt5.QtWidgets import QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow,QApplication
 from views import demo
 from PyQt5.QtCore import QEvent
-from utils import files,DB,files2db
+from utils import files,DB,files2db,formatting
 from models import course,lnkGraph
 from .topoSort import topoSort
+import json,os
 # import numpy as np
 
 db_name='test.db'
 
 class MainWindow(demo.Ui_MainWindow,QMainWindow):
-    major_list=[]
-    plan_list=[]
     db=None
     cur=None
+    id_to_course={}
+    course_to_id={}
     current_course_graph=None
+    working_dir=None
+    config={}
 
     def __init__(self):
         super(QMainWindow,self).__init__()
         self.setupUI(self)
         self.show()
-        self.connect_sigs()
+        self._connect_sigs()
         self._eventFilter()
+        self.working_dir = os.path.split(os.path.abspath(os.path.join(__file__, '..')))[0]
+        self.create_config()
         db_path = '../models/' + db_name
         self.db, self.cur = DB.connect_db(db_path)
 
     def _eventFilter(self):
         self.yes_butt.installEventFilter(self)
 
+    def get_plan_from_widget(self,widget):
+        plan=[]
+        for child in widget.findChildren(QGroupBox):
+            temp=[]
+            print(child.title())
+            for grand in child.findChildren(QCheckBox):
+                if grand.checkState():
+                    temp.append(self.course_to_id[grand.text().replace('\n','')])
+                plan.append(temp)
+                print(grand.text().replace('\n', '') + " " + str(grand.checkState()))
+        return plan
+
+    # TODO save_plan_to_database: NOT Done
     def eventFilter(self,watched,event):
         if watched==self.yes_butt:
             if event.type()==QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
                 print("yes!!")
-                print(self.tabArea.currentWidget().widget())
+                # print(self.tabArea.currentWidget().widget())
                 wgt=self.tabArea.currentWidget().widget()
-                for child in wgt.findChildren(QGroupBox):
-                    print(child.title())
-                return True
+                plan=self.get_plan_from_widget(wgt)
+                tab=self.tabArea
+                plan_name=tab.tabText(tab.currentIndex())
+                for p in self.config['plans']:
+                    if p['name']==plan_name:
+                        plan_id=p['id']
+                if DB.plan2DB(plan,self.db,self.cur,plan_id):
+                    return True
+                else:
+                    return False
 
         return False
     # without 'return False' the app will simply freeze
 
-    def connect_sigs(self):
+    def _connect_sigs(self):
         # self.yes_butt.clicked.connect(self.yes_butt_clicked)
         self.toolbar.actionTriggered[QAction].connect(self.toolbar_triggered)
+        self.toolbar.findChild(QComboBox).currentIndexChanged.connect(self.combo_triggered)
+        self.toolbar.findChild(QComboBox).activated.connect(self.activated_triggered)
         self.tabArea.tabCloseRequested.connect(self.tab_close_triggered)
         # self.mng.triggered[QAction].connect(self.menu_triggered)
         # self.mng_plan.triggered[QAction].connect(self.menu_triggered)
 
-    def menu_triggered(self,q):
-        if q.text()=='import_courses':
-            print("导入课程")
-            open_file = QFileDialog.getOpenFileName(self, '选择对应教学计划pdf文件', '', 'PDFs (*.pdf)')
-            if not open_file[0]:
-                return
-            pdf_path = open_file[0]
-            self.import_courses(pdf_path)
-        elif q.text()=='delete_courses':
-            print("删除课程")
-        elif q.text()=='创建计划':
-            print("creating plan")
-            if len(self.major_list)==0:
-                # print("zero")
-                msg3_title='警告'
-                msg3_text='请先导入专业课程信息'
-                self.info_popup(msg3_title,msg3_text)
-                return
-            self.create_plan()
-        elif q.text()=='删除计划':
-            print("deleting plan")
+    def combo_triggered(self,index):
+        print('combo '+str(index))
 
-        return
-    def toolbar_triggered(self,a):
-        print("toolbar triggered")
-        if a.text()=="导入课程":
+    # TODO activated_triggered: select plan for viewing
+    def activated_triggered(self,index):
+        combo=self.toolbar.findChild(QComboBox)
+        plan_name=combo.itemText(index)
+        print('activated '+str(index)+' '+plan_name)
+        for p in self.config['plans']:
+            if p['name']==plan_name:
+                DB.DB2plan(p['id'])
+
+    # def menu_triggered(self,q):
+    #     if q.text()=='import_courses':
+    #         print("导入课程")
+    #         open_file = QFileDialog.getOpenFileName(self, '选择对应教学计划pdf文件', '', 'PDFs (*.pdf)')
+    #         if not open_file[0]:
+    #             return
+    #         pdf_path = open_file[0]
+    #         self.import_courses(pdf_path)
+    #     elif q.text()=='delete_courses':
+    #         print("删除课程")
+    #     elif q.text()=='创建计划':
+    #         print("creating plan")
+    #         if len(self.major_list)==0:
+    #             # print("zero")
+    #             msg3_title='警告'
+    #             msg3_text='请先导入专业课程信息'
+    #             self.info_popup(msg3_title,msg3_text)
+    #             return
+    #         self.create_plan()
+    #     elif q.text()=='删除计划':
+    #         print("deleting plan")
+    #
+    #     return
+
+    def toolbar_triggered(self, tool):
+        print("toolbar triggered "+tool.text())
+        for i in self.toolbar.findChildren(QComboBox):
+            print(i)
+        if tool.text()== "导入课程":
             print("importing courses")
             open_file=QFileDialog.getOpenFileName(self,'选择对应教学计划pdf文件','','PDFs (*.pdf)')
             if not open_file[0]:
                 return
             pdf_path = open_file[0]
             self.import_courses(pdf_path)
-        elif a.text()=='open':
-            if len(self.major_list)==0:
+        elif tool.text()== 'open':
+            if len(self.config['majors'])==0:
                 # print("zero")
                 msg3_title='警告'
                 msg3_text='请先导入专业课程信息'
@@ -90,6 +132,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 return
             print("open")
             self.create_plan()
+
         return
 
     def import_courses(self,pdf_path):
@@ -127,7 +170,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         msg3_title = '提示'
         msg3_text = '导入成功！'
         self.info_popup(msg3_title, msg3_text)
-        self.major_list.append(major_name)
+        self.config['majors'].append(major_name)
         # DB.close_db(db, cur)
         return
 
@@ -135,7 +178,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     def create_plan(self):
         input_title = '请选择'
         input_prompt = '建立教学计划的专业：'
-        input2_ok, item = self.get_item_input(input_title, input_prompt, self.major_list)
+        input2_ok, item = self.get_item_input(input_title, input_prompt, self.config['majors'])
         if not input2_ok or not item:
             return
         input3_title='请输入'
@@ -145,8 +188,16 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         self.build_courses_graph(item)
         plan=topoSort(self.current_course_graph)
-        # self.current_course_graph.show_ver()
+        select_plan=self.toolbar.findChild(QComboBox)
+        select_plan.addItem(plan_name)
+        plan_id=self.config['global_id']+1
+        self.config['global_id']+=1
+        self.config['plans'].append({
+            'id':plan_id,
+            'name':plan_name
+        })
         self.display_plan(plan,plan_name)
+        DB.plan2DB(plan,self.db,self.cur,plan_id)
 
     def build_courses_graph(self, major_name):
         g=lnkGraph.lnkGraph()
@@ -154,19 +205,52 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         for row in cursor:
             # print(row)
             c=course.course(row[0],row[1],row[2],row[3],row[4],row[5])
+            self.course_to_id[row[1]]=row[0]
+            self.id_to_course[row[0]]=row[1]
             g.append_ver(c)
         # g.show_ver()
         cursor=self.cur.execute("select * from "+major_name+"_prerequisites")
         for row in cursor:
             preID = row[0]
             afterID = row[1]
-            # print(row[0]+" "+row[1])
             pre = g.find_ver_by_ID(preID)
             after = g.find_ver_by_ID(afterID)
             if pre and after:  # out degree (after course) in link
                 g.graph[pre].append(after)
         self.current_course_graph=g
 
+    def create_config(self):
+        if not os.path.exists(self.working_dir+'/models/config.json'):
+            self.config={
+                'global_id':0,
+                'majors':[],
+                'plans':[]
+            }
+            print(self.working_dir+'/models/config.json')
+            with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
+                json.dump(self.config,config)
+        else:
+            self.load_config()
+
+    def load_config(self):
+        cf=open(self.working_dir+'/models/config.json',encoding='utf-8')
+        self.config=json.load(cf)
+        combo=self.toolbar.findChild(QComboBox)
+        plans=[]
+        for p in self.config['plans']:
+            plans.append(p['name'])
+        combo.addItems(plans)
+        cf.close()
+
+    def closeEvent(self, event):
+        print('we are closing!!!')
+        self.update_config()
+        event.accept()
+    def update_config(self):
+        with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
+            json.dump(self.config,config)
+
+    # TODO tab_close_triggered: put plan into database when closing
     def tab_close_triggered(self, index):
         self.tabArea.removeTab(index)
 

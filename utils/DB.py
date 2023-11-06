@@ -31,27 +31,43 @@ def check_table_empty(cur,table_name):
     cur.execute(sql)
     count=cur.fetchone()[0]
     return count==0
-def plan2DB(plan,con,plan_id):
+
+
+def plan2DB(plan,con,cur,plan_id):
     cursor=con.cursor()
     course_list=[]
     l=len(plan)
     for i in range(l):
         for c in plan[i]:
-            course_list.append(tuple(plan_id,i+1,c.courseID))
-    if not check_table_exist(con,'plans'):
+            if isinstance(c,str):
+                course_list.append(tuple([plan_id, i + 1, c]))
+            else:
+                course_list.append(tuple([plan_id,i+1,c.courseID]))
+    if not check_table_exist(cur,'plans'):
         cursor.execute('''
             create table plans(
              plan_id integer,
              term integer,
              course_id text
         )''')
-    sql='insert into plans (plan_id,term,courses_id) values (?,?,?);'
+    sql='insert into plans (plan_id,term,course_id) values (?,?,?);'
     try:
+        cursor.execute('select count(*) from plans where plan_id='+str(plan_id)+';')
+        count=cursor.fetchone()[0]
+        if count!=0:
+            print('delete needed')
+            cursor.execute('delete from plans where plan_id='+str(plan_id)+';')
         cursor.executemany(sql,course_list)
     except sqlite3.Error as e:
-        print(e)
+        print('error:'+e)
         con.rollback()
         return False
+    con.commit()
     return True
+
+# TODO DB2plan: get plan from database
+def DB2plan(plan_id,cur):
+
+    pass
 
 

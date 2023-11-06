@@ -1,10 +1,12 @@
 import unittest
 from controllers import demo_backend,topoSort
 from PyQt5.QtWidgets import QApplication
+import tracemalloc
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self):
+        tracemalloc.start()
         self.app=QApplication([])
         self.w=demo_backend.MainWindow()
     # def test_all(self):
