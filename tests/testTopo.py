@@ -1,6 +1,6 @@
-from context import models
+from models import course,lnkGraph
 from context import utils
-from context import controllers
+from controllers import topoSort
 from utils import DB
 import unittest
 
@@ -8,14 +8,14 @@ import unittest
 class test_topoSort(unittest.TestCase):
     def test_topoSort_with_courses_graph_with_no_custom_setting(self):
         l = []
-        g = models.lnkGraph.lnkGraph()
+        g = lnkGraph.lnkGraph()
 
         db, cur = utils.DB.connect_db("../models/coursesInfo.db")
         cursor = cur.execute("select * from courses")
         for row in cursor:
             # print("num: {} name:{}".format(row[0],row[1]))
-            # print(row)
-            c = models.course.course(row[1], row[2], row[3], row[4], row[5], row[6])
+            print(row)
+            c = course.course(row[1], row[2], row[3], row[4], row[5], row[6])
             # print(c)
             l.append(c)
             g.append_ver(c)
@@ -33,9 +33,9 @@ class test_topoSort(unittest.TestCase):
 
         # g.show_ver()
 
-        controllers.topoSort.topoSort(g)
+        topoSort.topoSort(g)
 
         utils.DB.close_db(db, cur)
 
-# if __name__=='__main__':
-#     unittest.main()
+if __name__=='__main__':
+    unittest.main()
