@@ -1,21 +1,17 @@
 import os.path
-from context import models
 from PyQt5.QtWidgets import QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow,QApplication
 from views import demo
 from PyQt5.QtCore import QEvent
-from utils import files,DB,files2db,formatting
+from utils import DB,files2db
 from models import course,lnkGraph
 from .topoSort import topoSort
 import json,os
-# import numpy as np
 
 db_name='test.db'
 
 class MainWindow(demo.Ui_MainWindow,QMainWindow):
     db=None
     cur=None
-    id_to_course={}
-    course_to_id={}
     current_plan={}
     tabs=[]
     current_course_graph=None
@@ -36,14 +32,13 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     def _eventFilter(self):
         self.yes_butt.installEventFilter(self)
 
-    def get_plan_from_widget(self,widget):
+    def get_plan_from_widget(self,widget,major_name):
         plan=[]
         for child in widget.findChildren(QGroupBox):
             temp=[]
-            # print(child.title())
             for grand in child.findChildren(QCheckBox):
-                temp.append((self.course_to_id[grand.text().replace('\n','')],grand.checkState()))
-                # print(grand.text().replace('\n', '') + " " + str(grand.checkState()))
+                id=DB.get_courseID(grand.text().replace('\n',''),self.cur,major_name)
+                temp.append((id,grand.checkState()))
             plan.append(temp)
         return plan
 
@@ -53,12 +48,13 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             if event.type()==QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
                 print("yes!!")
                 wgt=self.tabArea.currentWidget().widget()
-                plan=self.get_plan_from_widget(wgt)
                 tab=self.tabArea
                 plan_name=tab.tabText(tab.currentIndex())
                 print(plan_name)
-                select_plan = self.toolbar.findChild(QComboBox)
-                select_plan.addItem(plan_name)
+                combo = self.toolbar.findChild(QComboBox)
+                print('guess if im in'+str(combo.findText(plan_name)))
+                if combo.findText(plan_name)==-1:
+                    combo.addItem(plan_name)
                 plan_in_config=False
                 for p in self.config['plans']:
                     if p['name']==plan_name:
@@ -77,7 +73,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 for p in self.config['plans']:
                     if p['name']==plan_name:
                         plan_id=p['id']
-                        # major_name=p['major']
+                        major_name=p['major']
+                plan = self.get_plan_from_widget(wgt,major_name)
                 if DB.plan2DB(plan,self.db,self.cur,plan_id):
                     # del self.current_plan[plan_name]
                     return True
@@ -231,17 +228,12 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.tabs.append(plan_name)
         self.display_plan(plan,plan_name)
 
-        # put all course into database
-        # DB.plan2DB(plan,self.db,self.cur,plan_id)
-
     def build_courses_graph(self, major_name):
         g=lnkGraph.lnkGraph()
         cursor=self.cur.execute("select * from "+major_name)
         for row in cursor:
             # print(row)
             c=course.course(row[0],row[1],row[2],row[3],row[4],row[5])
-            self.course_to_id[row[1]]=row[0]
-            self.id_to_course[row[0]]=row[1]
             g.append_ver(c)
         # g.show_ver()
         cursor=self.cur.execute("select * from "+major_name+"_prerequisites")
@@ -261,7 +253,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 'majors':[],
                 'plans':[]
             }
-            # print(self.working_dir+'/models/config.json')
             with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
                 json.dump(self.config,config)
         else:

@@ -17,8 +17,8 @@ class MyTestCase(unittest.TestCase):
         DB.close_db(db,cur)
     def test_print_table(self):
         db_path='../models/test.db'
-        self.print_table("plan2021_prerequisites",self.db_path)
-        # self.print_table("计算机",self.db_path)
+        # self.print_table("plan2021_prerequisites",self.db_path)
+        self.print_table("计算机",self.db_path)
 
     def test_check_table_exist_pass(self):
         db,cur=DB.connect_db(self.db_path)

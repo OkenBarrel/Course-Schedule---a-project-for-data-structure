@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QLayout,QLabel,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QLabel,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
 
 
@@ -127,14 +127,10 @@ class Ui_MainWindow(QMainWindow):
                         check.setChecked(True)
                 gb_layout.addWidget(check)
             gb.setLayout(gb_layout)
-            # print('gb h = ' + str(gb.size().height()) + '  w = ' + str(gb.size().width()))
             wgt_layout.addWidget(gb)
-        # print('locate widget:')
-        # print(self.tabArea.currentWidget().widget())
+
         wgt.setLayout(wgt_layout)
-        # print(check.font().pixelSize())
-        # print('wgt h = '+str(wgt.size().height())+'  w = '+str(wgt.size().width()))
-        # print('scroll h = '+str(self.tabArea.currentWidget().size().height())+'  w = '+str(self.tabArea.currentWidget().size().width()))
+
         self.tabArea.currentWidget().setWidget(wgt)
         print("done")
 

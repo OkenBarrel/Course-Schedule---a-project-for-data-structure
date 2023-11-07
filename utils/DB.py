@@ -1,6 +1,5 @@
 import sqlite3
 import sqlite3 as sq
-# from context import models
 from .files import check_dir
 from models import course
 
@@ -19,15 +18,18 @@ def close_db(db,cur):
 def init_db(db_dir,db_name):
     if check_dir(db_dir,db_name) is False:
         db,cur=connect_db(db_dir+'/'+db_name)
-        # 少create basic Table
+        # 少create basic Table???
         close_db(db,cur)
     return
+
 
 def check_table_exist(cur,table_name=''):
     sql="select count(*) from sqlite_master where type='table' and name='"+table_name+"'"
     cur.execute(sql)
     count=cur.fetchone()[0]
     return count>0
+
+
 def check_table_empty(cur,table_name):
     sql='select count(*) from '+table_name+';'
     cur.execute(sql)
@@ -42,11 +44,6 @@ def plan2DB(plan,con,cur,plan_id):
     for i in range(l):
         for c in plan[i]:
             course_list.append(tuple([plan_id, i + 1, c[0],c[1]]))
-
-            # if isinstance(c,str):
-            #     course_list.append(tuple([plan_id, i + 1, c]))
-            # else:
-            #     course_list.append(tuple([plan_id,i+1,c.courseID]))
     if not check_table_exist(cur,'plans'):
         cursor.execute('''
             create table plans(
@@ -89,6 +86,19 @@ def DB2plan(plan_id,cur,major_name):
         temp.append(tuple([c,row[6],row[7]]))
     plan.append(temp)
     return plan
+
+
+def get_courseID(course_name,cur,major):
+    sql='select courseID from '+major+' where name="'+course_name+'";'
+    cur.execute(sql)
+    id=cur.fetchone()[0]
+    return id
+
+
+def get_course_name(courseID,cur,major):
+    cur.execute('select courseID from '+major+' where courseID='+courseID+';')
+    name=cur.fetchone()[0]
+    return name
 
 
 
