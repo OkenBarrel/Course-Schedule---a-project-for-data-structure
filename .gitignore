@@ -1,2 +1,7 @@
 
 /tests
+.gitignore
+*.pdf
+*.json
+*.csv
+*.xlsx
