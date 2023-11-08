@@ -78,7 +78,7 @@ def DB2plan(plan_id,cur,major_name):
     print('in DB3plan now!!')
     temp=[]
     for row in cursor:
-        print(row[0]+' '+row[1]+' '+row[3])
+        # print(row[0]+' '+row[1]+' '+row[3])
         c=course.course(row[0],row[1],row[2],row[3],row[4],row[5])
         if row[7]>len(plan)+1:
             plan.append(temp)

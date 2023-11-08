@@ -1,16 +1,11 @@
-# from PyPDF2 import PdfReader
 import pdfplumber
 import pandas as pd
-# from .files import check_dir
 import os
 
 
-# def format_change(x):
-#     return f'{x:05d}'
 def pdf2df(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         for p in range(2):
-            # print(p)
             page=pdf.pages[p]
             table=page.extract_table()
             del table[1:3]
@@ -54,7 +49,7 @@ def df2db(df,table_name,con):
     df.to_sql(name=table_name,con=con,if_exists='replace',index=False)
 
 
-def create_user_excel(df,excel_name):
+def create_user_excel(df, excel_path):
 
     df_user=pd.DataFrame()
 
@@ -62,16 +57,16 @@ def create_user_excel(df,excel_name):
     df_user['name'] = df['name']
     df_user['pre']=None
     # print(df_user)
-    if os.path.exists("../models/"+excel_name) is False:
-    # if check_dir("../models",excel_name) is False:
-        df_user.to_excel("../models/"+excel_name,index=False)
+    if os.path.exists(excel_path) is False:
+        df_user.to_excel(excel_path, index=False)
     else:
         print('prerequisites already exist')
+
 
 def handin2list(df1):
     for col in ['pre']:
         df1[col] = df1[col].str.split(",")
-    print(df1.columns)
+    # print(df1.columns)
 
 
 def pre2db(pre_table_name, pre_path, db):

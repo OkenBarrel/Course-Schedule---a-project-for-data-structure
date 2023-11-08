@@ -1,10 +1,13 @@
-import os
+import os,sys
 from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import Qt,QCoreApplication
 from PyQt5.QtWidgets import QLabel,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
 
-
+if getattr(sys, 'frozen', False):
+    working_dir = os.path.dirname(sys.executable)
+elif __file__:
+    working_dir = os.path.split(os.path.dirname(__file__))[0]
 class Ui_MainWindow(QMainWindow):
     def setupUI(self,MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -15,14 +18,14 @@ class Ui_MainWindow(QMainWindow):
 
         self.yes_butt=QPushButton("yes")
         self.no_butt = QPushButton("no")
-        self.major_lable=QLabel('none yet')
+        # self.major_lable=QLabel('none yet')
 
         self.dock=QDockWidget("settings")
         wgt=QWidget()
         dock_layout=QVBoxLayout()
         dock_layout.addWidget(self.yes_butt)
         dock_layout.addWidget(self.no_butt)
-        dock_layout.addWidget(self.major_lable)
+        # dock_layout.addWidget(self.major_lable)
         # self.dock.setWidget(self.yes_butt)
         wgt.setLayout(dock_layout)
         self.dock.setWidget(wgt)
@@ -48,9 +51,10 @@ class Ui_MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock)
 
         self.toolbar=self.addToolBar("Toolbar")
-        new = QAction(QIcon("../views/v.png"), '导入课程', self)
+        print('working dir in views: '+working_dir)
+        new = QAction(QIcon(working_dir+"/views/v.png"), '导入课程', self)
         self.toolbar.addAction(new)
-        open=QAction(QIcon("../views/sina.xpm"),'open',self)
+        open=QAction(QIcon(working_dir+"/views/sina.xpm"),'open',self)
         self.toolbar.addAction(open)
         self.toolbar.addWidget(QComboBox())
 

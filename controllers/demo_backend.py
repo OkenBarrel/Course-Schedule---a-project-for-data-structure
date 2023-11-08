@@ -5,10 +5,13 @@ from PyQt5.QtCore import QEvent
 from utils import DB,files2db
 from models import course,lnkGraph
 from .topoSort import topoSort
-import json,os
+import json,os,sys
 
 db_name='test.db'
-
+if getattr(sys, 'frozen', False):
+    working_dir = os.path.dirname(sys.executable)
+elif __file__:
+    working_dir = os.path.split(os.path.dirname(__file__))[0]
 class MainWindow(demo.Ui_MainWindow,QMainWindow):
     db=None
     cur=None
@@ -17,17 +20,24 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     current_course_graph=None
     working_dir=None
     config={}
+    db_path=''
 
+    # FIXME 所有相对路径应该都要改成绝对路径，函数传入文件名过的部分要检查后改传入绝对路径
     def __init__(self):
         super(QMainWindow,self).__init__()
         self.setupUI(self)
         self.show()
         self._connect_sigs()
         self._eventFilter()
-        self.working_dir = os.path.split(os.path.abspath(os.path.join(__file__, '..')))[0]
+        # self.working_dir=os.path.split(working_dir)[0]
+        self.working_dir=working_dir
+        print('in backend: '+working_dir)
+        # self.working_dir = os.path.split(os.path.abspath(os.path.join(__file__, '..')))[0]
+        # print(os.path.abspath(os.path.join(__file__, '..')))
         self.create_config()
-        db_path = '../models/' + db_name
-        self.db, self.cur = DB.connect_db(db_path)
+        self.db_path = self.working_dir+'/models/' + db_name
+        print(self.db_path)
+        self.db, self.cur = DB.connect_db(self.db_path)
 
     def _eventFilter(self):
         self.yes_butt.installEventFilter(self)
@@ -90,13 +100,13 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         # self.toolbar.findChild(QComboBox).currentIndexChanged.connect(self.combo_triggered)
         self.toolbar.findChild(QComboBox).activated.connect(self.combo_activated_triggered)
         self.tabArea.tabCloseRequested.connect(self.tab_close_triggered)
-        self.tabArea.currentChanged.connect(self.set_major)
+        self.tabArea.currentChanged.connect(self.tab_changing)
         # self.mng.triggered[QAction].connect(self.menu_triggered)
         # self.mng_plan.triggered[QAction].connect(self.menu_triggered)
 
     # def combo_triggered(self,index):
     #     print('combo '+str(index))
-    def set_major(self,index):
+    def tab_changing(self,index):
         print('changing now!!!'+str(index))
 
     # TODO activated_triggered: select plan for viewing
@@ -163,12 +173,13 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     def import_courses(self,pdf_path):
 
-        pdf_dir = pdf_path.rsplit('/', 1)[0]
+        # pdf_dir = pdf_path.rsplit('/', 1)[0]
         pdf_name = pdf_path.rsplit('/', 1)[1]
         input_ok, major_name = self.get_text_input('请输入专业名称', '专业：', pdf_name.split('.', 1)[0])
         if not input_ok or not major_name:
             return
         excel_name = major_name.split('.')[0] + '_prerequisites.xlsx'
+        excel_path=self.working_dir+'/models/'+major_name.split('.')[0] + '_prerequisites.xlsx'
 
         pdf_df = files2db.pdf2df(pdf_path)
 
@@ -176,7 +187,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         files2db.df2db(pdf_df, major_name, self.db)
 
         # creating empty excel for user
-        files2db.create_user_excel(pdf_df, excel_name)
+        files2db.create_user_excel(pdf_df, excel_path)
 
         msg_title = "警告"
         msg_text = "请确认在 models文件夹 " + excel_name + "文件中已经填写了正确先修课信息"
@@ -187,7 +198,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         # putting prerequisites info into database
         table_name = major_name + '_prerequisites'
-        files2db.pre2db(table_name, "../models/" + excel_name, self.db)
+        files2db.pre2db(table_name, self.working_dir+"/models/" + excel_name, self.db)
         if DB.check_table_empty(self.cur, table_name) or DB.check_table_exist(self.cur, table_name) is False:
             msg2_title = '警告'
             msg2_text = '导入信息为空，请正确导入先修课信息'
@@ -196,7 +207,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         msg3_title = '提示'
         msg3_text = '导入成功！'
         self.info_popup(msg3_title, msg3_text)
-        self.config['majors'].append(major_name)
+        if major_name not in self.config['majors']:
+            self.config['majors'].append(major_name)
         # DB.close_db(db, cur)
         return
 
@@ -221,8 +233,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                     return
         self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
-        combo=self.toolbar.findChild(QComboBox)
-        combo.addItem(plan_name)
         # print('in creating plan:'+plan_name)
         self.current_plan[plan_name]=major_name
         self.tabs.append(plan_name)

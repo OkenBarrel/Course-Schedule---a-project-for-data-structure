@@ -1,7 +1,10 @@
 
+<<<<<<< HEAD
 /tests
-.gitignore
+#.gitignore
 *.pdf
+=======
+>>>>>>> develop
 *.json
 *.csv
 *.xlsx
