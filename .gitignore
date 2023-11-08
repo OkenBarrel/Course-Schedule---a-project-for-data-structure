@@ -1,2 +1,4 @@
 
-/tests
+*.json
+*.csv
+*.xlsx
