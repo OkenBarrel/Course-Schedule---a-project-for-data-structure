@@ -3,6 +3,16 @@
 /tests
 *.pdf
 .gitignore
+/dist
+/build
+!requirements.txt
+*.spec
 *.json
 *.csv
 *.xlsx
+<<<<<<< HEAD
+=======
+*.txt
+*.pdf
+*.zip
+>>>>>>> develop

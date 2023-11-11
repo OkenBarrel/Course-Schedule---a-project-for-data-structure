@@ -3,6 +3,7 @@ import pandas as pd
 import os
 
 
+# FIXME pdf2db: faults when deciding whether courses are compulsory
 def pdf2df(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         for p in range(2):
@@ -90,3 +91,6 @@ def pre2db(pre_table_name, pre_path, db):
 
     df2db(pre, pre_table_name, db)
 
+def delete_row_from_table(table,cur,db,key):
+
+    pass

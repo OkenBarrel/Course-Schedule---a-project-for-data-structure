@@ -5,7 +5,7 @@ from models.lnkList import *
 class lnkGraph:
 
     def __init__(self):
-        print("lnkGraph created")
+        # print("lnkGraph created")
         self.graph=[]
         self.size=0
         self.edge_num=0

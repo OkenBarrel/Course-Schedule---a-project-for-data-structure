@@ -69,7 +69,6 @@ def plan2DB(plan,con,cur,plan_id):
     return True
 
 
-# TODO DB2plan: get plan from database
 def DB2plan(plan_id,cur,major_name):
     plan=[]
     cursor=cur.execute('''select major.courseID,major.name,major.final,major.credit,major.department,major.compulsory,plans.chosen,plans.term

@@ -1,41 +1,45 @@
 import os.path
-from PyQt5.QtWidgets import QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow,QApplication
+from PyQt5.QtWidgets import QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
 from views import demo
-from PyQt5.QtCore import QEvent
+from PyQt5.QtCore import QEvent,pyqtSignal
 from utils import DB,files2db
 from models import course,lnkGraph
 from .topoSort import topoSort
-import json,os,sys
+import json,os,sys,copy
+
+
+def handler(results):
+    print(type(results))
+    print(results)
+
 
 db_name='test.db'
 if getattr(sys, 'frozen', False):
     working_dir = os.path.dirname(sys.executable)
 elif __file__:
     working_dir = os.path.split(os.path.dirname(__file__))[0]
+
+
 class MainWindow(demo.Ui_MainWindow,QMainWindow):
     db=None
     cur=None
-    current_plan={}
-    tabs=[]
+    unsaved_plan={}
     current_course_graph=None
+    working_major=None
     working_dir=None
     config={}
     db_path=''
+    open_combo=pyqtSignal(int)
 
-    # FIXME 所有相对路径应该都要改成绝对路径，函数传入文件名过的部分要检查后改传入绝对路径
+    # TODO 增加更新前置信息的tool？
     def __init__(self):
         super(QMainWindow,self).__init__()
         self.setupUI(self)
         self.show()
         self._connect_sigs()
         self._eventFilter()
-        # self.working_dir=os.path.split(working_dir)[0]
-        self.working_dir=working_dir
-        print('in backend: '+working_dir)
-        # self.working_dir = os.path.split(os.path.abspath(os.path.join(__file__, '..')))[0]
-        # print(os.path.abspath(os.path.join(__file__, '..')))
         self.create_config()
-        self.db_path = self.working_dir+'/models/' + db_name
+        self.db_path = working_dir+'/models/' + db_name
         print(self.db_path)
         self.db, self.cur = DB.connect_db(self.db_path)
 
@@ -52,7 +56,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             plan.append(temp)
         return plan
 
-    # TODO save_plan_to_database: NOT Done
     def eventFilter(self,watched,event):
         if watched==self.yes_butt:
             if event.type()==QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
@@ -65,20 +68,16 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 print('guess if im in'+str(combo.findText(plan_name)))
                 if combo.findText(plan_name)==-1:
                     combo.addItem(plan_name)
-                plan_in_config=False
-                for p in self.config['plans']:
-                    if p['name']==plan_name:
-                        plan_in_config=True
-                        break
-                if not plan_in_config:
+                plans_in_config=[p['name'] for p in self.config['plans']]
+                if plan_name not in plans_in_config:
                     plan_id = self.config['global_id'] + 1
                     self.config['global_id'] += 1
                     self.config['plans'].append({
                         'id': plan_id,
                         'name': plan_name,
-                        'major':self.current_plan[plan_name]
+                        'major':self.unsaved_plan[plan_name]
                     })
-                    major_name=self.current_plan[plan_name]
+                    major_name=self.unsaved_plan[plan_name]
 
                 for p in self.config['plans']:
                     if p['name']==plan_name:
@@ -86,7 +85,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                         major_name=p['major']
                 plan = self.get_plan_from_widget(wgt,major_name)
                 if DB.plan2DB(plan,self.db,self.cur,plan_id):
-                    # del self.current_plan[plan_name]
+                    print(self.unsaved_plan)
+                    # del self.unsaved_plan[plan_name]
                     return True
                 else:
                     return False
@@ -99,6 +99,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.toolbar.actionTriggered[QAction].connect(self.toolbar_triggered)
         # self.toolbar.findChild(QComboBox).currentIndexChanged.connect(self.combo_triggered)
         self.toolbar.findChild(QComboBox).activated.connect(self.combo_activated_triggered)
+        self.open_combo.connect(self.combo_activated_triggered)
         self.tabArea.tabCloseRequested.connect(self.tab_close_triggered)
         self.tabArea.currentChanged.connect(self.tab_changing)
         # self.mng.triggered[QAction].connect(self.menu_triggered)
@@ -108,8 +109,14 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     #     print('combo '+str(index))
     def tab_changing(self,index):
         print('changing now!!!'+str(index))
+        if len(self.config['majors'])<=1:
+            return
+        for p in self.config['plans']:
+            if self.tabArea.tabText(index)==p['name'] and self.working_major!=p['major']:
+                self.build_courses_graph(p['major'])
+                self.working_major=p['major']
+                return
 
-    # TODO activated_triggered: select plan for viewing
     def combo_activated_triggered(self, index):
         combo=self.toolbar.findChild(QComboBox)
         plan_name=combo.itemText(index)
@@ -120,33 +127,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 major_name=p['major']
                 break
         plan=DB.DB2plan(plan_id,self.db,major_name)
-        self.tabs.append(plan_name)
         self.display_plan(plan,plan_name,True)
         return
-
-    # def menu_triggered(self,q):
-    #     if q.text()=='import_courses':
-    #         print("导入课程")
-    #         open_file = QFileDialog.getOpenFileName(self, '选择对应教学计划pdf文件', '', 'PDFs (*.pdf)')
-    #         if not open_file[0]:
-    #             return
-    #         pdf_path = open_file[0]
-    #         self.import_courses(pdf_path)
-    #     elif q.text()=='delete_courses':
-    #         print("删除课程")
-    #     elif q.text()=='创建计划':
-    #         print("creating plan")
-    #         if len(self.major_list)==0:
-    #             # print("zero")
-    #             msg3_title='警告'
-    #             msg3_text='请先导入专业课程信息'
-    #             self.info_popup(msg3_title,msg3_text)
-    #             return
-    #         self.create_plan()
-    #     elif q.text()=='删除计划':
-    #         print("deleting plan")
-    #
-    #     return
 
     def toolbar_triggered(self, tool):
         print("toolbar triggered "+tool.text())
@@ -168,8 +150,36 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 return
             print("open")
             self.create_plan()
+        elif tool.text()=='delete plan':
+            new=Pop_up('testing',[p['name'] for p in self.config['plans']])
+            new.results.connect(self.delete_plan)
+            res=new.exec_()
+            print(res)
 
         return
+
+    def delete_plan(self,results):
+        combo = self.toolbar.findChild(QComboBox)
+        copied=copy.deepcopy(self.config)
+        index=0
+        sql='delete from plans where plan_id='
+        for p in copied['plans']:
+            print(p)
+            if p['name'] in results:
+                self.cur.execute(sql+str(p['id']))
+                self.db.commit()
+                print('removing '+p['name'])
+                combo.removeItem(combo.findText(p['name']))
+                self.config['plans'].remove(p)
+
+            index+=1
+        print('config')
+        for p in self.config['plans']:
+            print(p)
+        print('copied')
+        for p in copied['plans']:
+            print(p)
+
 
     def import_courses(self,pdf_path):
 
@@ -179,7 +189,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         if not input_ok or not major_name:
             return
         excel_name = major_name.split('.')[0] + '_prerequisites.xlsx'
-        excel_path=self.working_dir+'/models/'+major_name.split('.')[0] + '_prerequisites.xlsx'
+        excel_path=working_dir+'/models/'+major_name.split('.')[0] + '_prerequisites.xlsx'
 
         pdf_df = files2db.pdf2df(pdf_path)
 
@@ -198,7 +208,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         # putting prerequisites info into database
         table_name = major_name + '_prerequisites'
-        files2db.pre2db(table_name, self.working_dir+"/models/" + excel_name, self.db)
+        files2db.pre2db(table_name, working_dir+"/models/" + excel_name, self.db)
         if DB.check_table_empty(self.cur, table_name) or DB.check_table_exist(self.cur, table_name) is False:
             msg2_title = '警告'
             msg2_text = '导入信息为空，请正确导入先修课信息'
@@ -213,7 +223,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         return
 
     # TODO create_plan: maybe merge 2 pop-up window
-    # FIXME create_plan: bug when create new plan that already exists
     def create_plan(self):
         input_title = '请选择'
         input_prompt = '建立教学计划的专业：'
@@ -225,51 +234,74 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         input3_ok,plan_name=self.get_text_input(input3_title,input3_prompt,'default')
         if not input3_ok:
             return
-        if plan_name in self.tabs:
-            num=self.tabArea.count()
-            for index in range(num):
+        tab_num = self.tabArea.count()
+        combo=self.toolbar.findChild(QComboBox)
+
+        opened_tabs=[self.tabArea.tabText(tab_index) for tab_index in range(tab_num)]
+        # combo_num=combo.coun
+        # opened_tabs+=[for combo_index in range()]
+        if plan_name in opened_tabs:
+            for index in range(tab_num):
                 if self.tabArea.tabText(index)==plan_name:
                     self.tabArea.setCurrentIndex(index)
                     return
+        combo_index=combo.findText(plan_name)
+        if combo_index!=-1:
+            self.open_combo.emit(combo_index)
+            return
         self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
-        # print('in creating plan:'+plan_name)
-        self.current_plan[plan_name]=major_name
-        self.tabs.append(plan_name)
+        self.unsaved_plan[plan_name]=major_name
         self.display_plan(plan,plan_name)
 
     def build_courses_graph(self, major_name):
         g=lnkGraph.lnkGraph()
-        cursor=self.cur.execute("select * from "+major_name)
+        cursor = self.cur.execute('''select * from 计算机 as c
+                                        where not exists (select p.courseID from  计算机_prerequisites as p 
+                                        where c.courseId=p.courseID 
+                                        group by p.courseID);''')
         for row in cursor:
             # print(row)
-            c=course.course(row[0],row[1],row[2],row[3],row[4],row[5])
+            c = course.course(row[0], row[1], row[2], row[3], row[4], row[5])
+            g.append_ver(c)
+        cursor = self.cur.execute('''select p.courseID,count(*) as num,c.name,c.final,c.credit,c.department,c.compulsory 
+                                    from 计算机_prerequisites as p,计算机 as c 
+                                    where c.courseId=p.courseID 
+                                    group by p.courseID 
+                                    order by num;''')
+        # print('again!!!')
+        for row2 in cursor:
+            # print(row2)
+            c = course.course(row2[0], row2[2], row2[3], row2[4], row2[5], row2[6])
             g.append_ver(c)
         # g.show_ver()
-        cursor=self.cur.execute("select * from "+major_name+"_prerequisites")
+        cursor = self.cur.execute('select * from 计算机_prerequisites;')
         for row in cursor:
-            preID = row[0]
-            afterID = row[1]
-            pre = g.find_ver_by_ID(preID)
-            after = g.find_ver_by_ID(afterID)
-            if pre and after:  # out degree (after course) in link
-                g.graph[pre].append(after)
+            courseID = row[0]
+            preID = row[1]
+            # print(row[0]+" "+row[1])
+            after_index = g.find_ver_by_ID(courseID)
+            pre_index = g.find_ver_by_ID(preID)
+
+            if pre_index and after_index:  # out degree (pre_index course) in link
+                # g.graph[pre_index].append(after_index)
+                g.add_edge(pre_index, after_index)
         self.current_course_graph=g
 
     def create_config(self):
-        if not os.path.exists(self.working_dir+'/models/config.json'):
+        if not os.path.exists(working_dir+'/models/config.json'):
             self.config={
                 'global_id':0,
                 'majors':[],
                 'plans':[]
             }
-            with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
+            with open(working_dir+'/models/config.json','w',encoding='utf-8') as config:
                 json.dump(self.config,config)
         else:
             self.load_config()
 
     def load_config(self):
-        cf=open(self.working_dir+'/models/config.json',encoding='utf-8')
+        cf=open(working_dir+'/models/config.json',encoding='utf-8')
         self.config=json.load(cf)
         combo=self.toolbar.findChild(QComboBox)
         plans=[]
@@ -285,7 +317,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         event.accept()
 
     def update_config(self):
-        with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
+        with open(working_dir+'/models/config.json','w',encoding='utf-8') as config:
             json.dump(self.config,config)
 
     # TODO tab_close_triggered: put plan into database when closing
@@ -296,9 +328,24 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     #     print("yes!")
 
 
-# if __name__=='__main__':
-#
-#     app=QApplication([])
-#     w=MainWindow()
-#     app.exec_()
+class Pop_up(demo.Ui_popup,QDialog):
+    results=pyqtSignal(dict)
+    def __init__(self,title,option):
+        super(QDialog,self).__init__()
+        self.setUI(self,title,option)
+        # self.show()
+        self._connect()
 
+    def _connect(self):
+        self.yes.clicked.connect(self.yes_btn)
+        # self.results.connect(self.yes_btn)
+
+    def yes_btn(self):
+        print('yes')
+        deleted_plan={}
+        for check in self.group.findChildren(QCheckBox):
+            if check.checkState():
+                deleted_plan[check.text()]=check.checkState()
+        print(deleted_plan)
+        self.results.emit(deleted_plan)
+        self.accept()
