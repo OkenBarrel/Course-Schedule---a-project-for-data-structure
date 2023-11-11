@@ -18,4 +18,5 @@ config={
     }
     ]
 }
-print()
+li=[p['name'] for p in config['plans']]
+print(li+['fuck'])

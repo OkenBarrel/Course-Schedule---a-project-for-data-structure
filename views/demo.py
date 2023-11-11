@@ -33,17 +33,6 @@ class Ui_MainWindow(QMainWindow):
         wgt.setLayout(dock_layout)
         self.dock.setWidget(wgt)
 
-
-
-        # self.mng=self.menuBar().addMenu('管理专业课程')
-        # # import_courses = QAction('导入课程', self)
-        # self.mng.addAction('import_courses')
-        # # delete_courses=QAction('删除课程',self)
-        # self.mng.addAction('delete_courses')
-        # self.mng_plan=self.menuBar().addMenu('管理教学计划')
-        # self.mng_plan.addAction('创建计划')
-        # self.mng_plan.addAction('删除计划')
-
         self.tabArea=QTabWidget()
         print('tabArea h = '+str(self.tabArea.size().height())+'  w = '+str(self.tabArea.size().width()))
 

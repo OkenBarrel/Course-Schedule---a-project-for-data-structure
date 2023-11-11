@@ -1,7 +1,7 @@
 import os.path
 from PyQt5.QtWidgets import QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow,QApplication
 from views import demo
-from PyQt5.QtCore import QEvent
+from PyQt5.QtCore import QEvent,pyqtSignal
 from utils import DB,files2db
 from models import course,lnkGraph
 from .topoSort import topoSort
@@ -16,25 +16,22 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     db=None
     cur=None
     current_plan={}
-    tabs=[]
     current_course_graph=None
     working_dir=None
     config={}
     db_path=''
+    open_combo=pyqtSignal(int)
 
-    # FIXME 所有相对路径应该都要改成绝对路径，函数传入文件名过的部分要检查后改传入绝对路径
-    # TODO 增加更新迁至信息的tool？
+
+    # TODO 增加更新前置信息的tool？
     def __init__(self):
         super(QMainWindow,self).__init__()
         self.setupUI(self)
         self.show()
         self._connect_sigs()
         self._eventFilter()
-        # self.working_dir=os.path.split(working_dir)[0]
         self.working_dir=working_dir
-        print('in backend: '+working_dir)
-        # self.working_dir = os.path.split(os.path.abspath(os.path.join(__file__, '..')))[0]
-        # print(os.path.abspath(os.path.join(__file__, '..')))
+        # print('in backend: '+working_dir)
         self.create_config()
         self.db_path = self.working_dir+'/models/' + db_name
         print(self.db_path)
@@ -66,12 +63,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 print('guess if im in'+str(combo.findText(plan_name)))
                 if combo.findText(plan_name)==-1:
                     combo.addItem(plan_name)
-                plan_in_config=False
-                for p in self.config['plans']:
-                    if p['name']==plan_name:
-                        plan_in_config=True
-                        break
-                if not plan_in_config:
+                plans_in_config=[p['name'] for p in self.config['plans']]
+                if plan_name not in plans_in_config:
                     plan_id = self.config['global_id'] + 1
                     self.config['global_id'] += 1
                     self.config['plans'].append({
@@ -100,6 +93,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.toolbar.actionTriggered[QAction].connect(self.toolbar_triggered)
         # self.toolbar.findChild(QComboBox).currentIndexChanged.connect(self.combo_triggered)
         self.toolbar.findChild(QComboBox).activated.connect(self.combo_activated_triggered)
+        self.open_combo.connect(self.combo_activated_triggered)
         self.tabArea.tabCloseRequested.connect(self.tab_close_triggered)
         self.tabArea.currentChanged.connect(self.tab_changing)
         # self.mng.triggered[QAction].connect(self.menu_triggered)
@@ -121,33 +115,9 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 major_name=p['major']
                 break
         plan=DB.DB2plan(plan_id,self.db,major_name)
-        self.tabs.append(plan_name)
         self.display_plan(plan,plan_name,True)
         return
 
-    # def menu_triggered(self,q):
-    #     if q.text()=='import_courses':
-    #         print("导入课程")
-    #         open_file = QFileDialog.getOpenFileName(self, '选择对应教学计划pdf文件', '', 'PDFs (*.pdf)')
-    #         if not open_file[0]:
-    #             return
-    #         pdf_path = open_file[0]
-    #         self.import_courses(pdf_path)
-    #     elif q.text()=='delete_courses':
-    #         print("删除课程")
-    #     elif q.text()=='创建计划':
-    #         print("creating plan")
-    #         if len(self.major_list)==0:
-    #             # print("zero")
-    #             msg3_title='警告'
-    #             msg3_text='请先导入专业课程信息'
-    #             self.info_popup(msg3_title,msg3_text)
-    #             return
-    #         self.create_plan()
-    #     elif q.text()=='删除计划':
-    #         print("deleting plan")
-    #
-    #     return
 
     def toolbar_triggered(self, tool):
         print("toolbar triggered "+tool.text())
@@ -214,7 +184,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         return
 
     # TODO create_plan: maybe merge 2 pop-up window
-    # FIXME create_plan: bug when create new plan that already exists
     def create_plan(self):
         input_title = '请选择'
         input_prompt = '建立教学计划的专业：'
@@ -226,17 +195,24 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         input3_ok,plan_name=self.get_text_input(input3_title,input3_prompt,'default')
         if not input3_ok:
             return
-        if plan_name in self.tabs:
-            num=self.tabArea.count()
-            for index in range(num):
+        tab_num = self.tabArea.count()
+        combo=self.toolbar.findChild(QComboBox)
+
+        opened_tabs=[self.tabArea.tabText(tab_index) for tab_index in range(tab_num)]
+        # combo_num=combo.coun
+        # opened_tabs+=[for combo_index in range()]
+        if plan_name in opened_tabs:
+            for index in range(tab_num):
                 if self.tabArea.tabText(index)==plan_name:
                     self.tabArea.setCurrentIndex(index)
                     return
+        combo_index=combo.findText(plan_name)
+        if combo_index!=-1:
+            self.open_combo.emit(combo_index)
+            return
         self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
-        # print('in creating plan:'+plan_name)
         self.current_plan[plan_name]=major_name
-        self.tabs.append(plan_name)
         self.display_plan(plan,plan_name)
 
     def build_courses_graph(self, major_name):
