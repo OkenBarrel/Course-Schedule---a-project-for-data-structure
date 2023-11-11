@@ -2,9 +2,11 @@
 .gitignore
 /dist
 /build
+!requirements.txt
 *.spec
 *.json
 *.csv
 *.xlsx
+*.txt
 *.pdf
 *.zip
