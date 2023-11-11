@@ -1,11 +1,17 @@
 import os.path
-from PyQt5.QtWidgets import QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow,QApplication
+from PyQt5.QtWidgets import QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
 from views import demo
 from PyQt5.QtCore import QEvent,pyqtSignal
 from utils import DB,files2db
 from models import course,lnkGraph
 from .topoSort import topoSort
-import json,os,sys
+import json,os,sys,copy
+
+
+def handler(results):
+    print(type(results))
+    print(results)
+
 
 db_name='test.db'
 if getattr(sys, 'frozen', False):
@@ -144,8 +150,36 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 return
             print("open")
             self.create_plan()
+        elif tool.text()=='delete plan':
+            new=Pop_up('testing',[p['name'] for p in self.config['plans']])
+            new.results.connect(self.delete_plan)
+            res=new.exec_()
+            print(res)
 
         return
+
+    def delete_plan(self,results):
+        combo = self.toolbar.findChild(QComboBox)
+        copied=copy.deepcopy(self.config)
+        index=0
+        sql='delete from plans where plan_id='
+        for p in copied['plans']:
+            print(p)
+            if p['name'] in results:
+                self.cur.execute(sql+str(p['id']))
+                self.db.commit()
+                print('removing '+p['name'])
+                combo.removeItem(combo.findText(p['name']))
+                self.config['plans'].remove(p)
+
+            index+=1
+        print('config')
+        for p in self.config['plans']:
+            print(p)
+        print('copied')
+        for p in copied['plans']:
+            print(p)
+
 
     def import_courses(self,pdf_path):
 
@@ -292,3 +326,26 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     # def yes_butt_clicked(self):
     #     print("yes!")
+
+
+class Pop_up(demo.Ui_popup,QDialog):
+    results=pyqtSignal(dict)
+    def __init__(self,title,option):
+        super(QDialog,self).__init__()
+        self.setUI(self,title,option)
+        # self.show()
+        self._connect()
+
+    def _connect(self):
+        self.yes.clicked.connect(self.yes_btn)
+        # self.results.connect(self.yes_btn)
+
+    def yes_btn(self):
+        print('yes')
+        deleted_plan={}
+        for check in self.group.findChildren(QCheckBox):
+            if check.checkState():
+                deleted_plan[check.text()]=check.checkState()
+        print(deleted_plan)
+        self.results.emit(deleted_plan)
+        self.accept()

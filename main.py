@@ -8,10 +8,11 @@ import views
 import utils
 import models
 from PyQt5.QtWidgets import QApplication
+import sys
 
 if __name__=='__main__':
     app=QApplication([])
     w=MainWindow()
-    app.exec_()
+    sys.exit(app.exec_())
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

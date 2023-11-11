@@ -1,13 +1,14 @@
 import os,sys
 from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QLabel,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QRadioButton,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QToolBar,QMenuBar,QTextEdit,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QRadioButton,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
 
 if getattr(sys, 'frozen', False):
     working_dir = os.path.dirname(sys.executable)
 elif __file__:
     working_dir = os.path.split(os.path.dirname(__file__))[0]
+
 
 # TODO views: change the color scheme
 class Ui_MainWindow(QMainWindow):
@@ -25,8 +26,6 @@ class Ui_MainWindow(QMainWindow):
         dock_layout=QVBoxLayout()
         dock_layout.addWidget(self.yes_butt)
         dock_layout.addWidget(self.no_butt)
-        # dock_layout.addWidget(self.major_lable)
-        # self.dock.setWidget(self.yes_butt)
         wgt.setStyleSheet("""
             .QWidget {background:#545d64;}    
         """)
@@ -48,6 +47,8 @@ class Ui_MainWindow(QMainWindow):
         self.toolbar.addAction(new)
         open=QAction(QIcon(working_dir+"/views/sina.xpm"),'open',self)
         self.toolbar.addAction(open)
+        delete_plan=QAction('delete plan',self)
+        self.toolbar.addAction(delete_plan)
         self.toolbar.addWidget(QComboBox())
 
         self.translateUI(MainWindow)
@@ -129,5 +130,25 @@ class Ui_MainWindow(QMainWindow):
 
         self.tabArea.currentWidget().setWidget(wgt)
         print("done")
+
+class Ui_popup(QDialog):
+    def setUI(self,popup,title,option):
+        popup.setObjectName("pop_up")
+        # QDialog().setWindowTitle()
+        popup.setWindowTitle(title)
+        popup.resize(400,500)
+        self.group=QGroupBox('请选择')
+        layout=QVBoxLayout()
+        self.yes=QPushButton('yes')
+        layout.addWidget(self.group)
+        layout.addWidget(self.yes)
+        popup.setLayout(layout)
+        self.display_choice(option)
+
+    def display_choice(self,option):
+        gb_layout=QVBoxLayout()
+        for e in option:
+            gb_layout.addWidget(QCheckBox(str(e)))
+        self.group.setLayout(gb_layout)
 
 

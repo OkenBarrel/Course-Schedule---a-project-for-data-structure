@@ -6,6 +6,8 @@ from utils import files
 
 path="E:/Files for Work/ds proj/courseSchedule/views"
 print(os.path.split(os.path.abspath(os.path.join(__file__,'..')))[0])
+def func(li):
+    li.append('111')
 
 config={
     "majors":[],
@@ -18,5 +20,6 @@ config={
     }
     ]
 }
-li=[p['name'] for p in config['plans']]
-print(li+['fuck'])
+di={'what':2,'the':2,'fuck':2}
+print('what' in di)
+# print(li)
