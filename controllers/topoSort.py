@@ -3,13 +3,13 @@ from models.Queue import *
 UNVISITED=0
 VISITED=1
 # FIXME topoSort: need to arrange courses in graph by prerequisites num
-def topoSort(lnkGraph):
+def topoSort(lnkGraph,one_in_a_term=None):
+    only_once=['体育']
     res=[]
     l=len(lnkGraph.graph)
     visited=[UNVISITED]*l
     indegree=lnkGraph.indegree
     in0=Queue()
-    rest=Queue()
     temp=[]
     for e in range(l):
         if indegree[e]==0:

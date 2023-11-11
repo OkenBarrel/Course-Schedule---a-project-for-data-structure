@@ -8,13 +8,13 @@ if getattr(sys, 'frozen', False):
     working_dir = os.path.dirname(sys.executable)
 elif __file__:
     working_dir = os.path.split(os.path.dirname(__file__))[0]
+
+# TODO views: change the color scheme
 class Ui_MainWindow(QMainWindow):
     def setupUI(self,MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1200,800)
         # MainWindow.setFixedSize(1200,800)
-
-        layout=QHBoxLayout()
 
         self.yes_butt=QPushButton("yes")
         self.no_butt = QPushButton("no")
@@ -27,6 +27,9 @@ class Ui_MainWindow(QMainWindow):
         dock_layout.addWidget(self.no_butt)
         # dock_layout.addWidget(self.major_lable)
         # self.dock.setWidget(self.yes_butt)
+        wgt.setStyleSheet("""
+            .QWidget {background:#545d64;}    
+        """)
         wgt.setLayout(dock_layout)
         self.dock.setWidget(wgt)
 

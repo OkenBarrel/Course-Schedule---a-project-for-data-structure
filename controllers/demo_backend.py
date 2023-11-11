@@ -23,6 +23,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     db_path=''
 
     # FIXME 所有相对路径应该都要改成绝对路径，函数传入文件名过的部分要检查后改传入绝对路径
+    # TODO 增加更新迁至信息的tool？
     def __init__(self):
         super(QMainWindow,self).__init__()
         self.setupUI(self)
@@ -240,20 +241,36 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     def build_courses_graph(self, major_name):
         g=lnkGraph.lnkGraph()
-        cursor=self.cur.execute("select * from "+major_name)
+        cursor = self.cur.execute('''select * from 计算机 as c
+                                        where not exists (select p.courseID from  计算机_prerequisites as p 
+                                        where c.courseId=p.courseID 
+                                        group by p.courseID);''')
         for row in cursor:
             # print(row)
-            c=course.course(row[0],row[1],row[2],row[3],row[4],row[5])
+            c = course.course(row[0], row[1], row[2], row[3], row[4], row[5])
+            g.append_ver(c)
+        cursor = self.cur.execute('''select p.courseID,count(*) as num,c.name,c.final,c.credit,c.department,c.compulsory 
+                                    from 计算机_prerequisites as p,计算机 as c 
+                                    where c.courseId=p.courseID 
+                                    group by p.courseID 
+                                    order by num;''')
+        # print('again!!!')
+        for row2 in cursor:
+            # print(row2)
+            c = course.course(row2[0], row2[2], row2[3], row2[4], row2[5], row2[6])
             g.append_ver(c)
         # g.show_ver()
-        cursor=self.cur.execute("select * from "+major_name+"_prerequisites")
+        cursor = self.cur.execute('select * from 计算机_prerequisites;')
         for row in cursor:
-            preID = row[0]
-            afterID = row[1]
-            pre = g.find_ver_by_ID(preID)
-            after = g.find_ver_by_ID(afterID)
-            if pre and after:  # out degree (after course) in link
-                g.graph[pre].append(after)
+            courseID = row[0]
+            preID = row[1]
+            # print(row[0]+" "+row[1])
+            after_index = g.find_ver_by_ID(courseID)
+            pre_index = g.find_ver_by_ID(preID)
+
+            if pre_index and after_index:  # out degree (pre_index course) in link
+                # g.graph[pre_index].append(after_index)
+                g.add_edge(pre_index, after_index)
         self.current_course_graph=g
 
     def create_config(self):

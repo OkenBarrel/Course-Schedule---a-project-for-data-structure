@@ -1,6 +1,10 @@
 
 .gitignore
+/dist
+/build
+*.spec
 *.json
 *.csv
 *.xlsx
 *.pdf
+*.zip
