@@ -3,6 +3,7 @@ import pandas as pd
 import os
 
 
+# FIXME pdf2db: faults when deciding whether courses are compulsory
 def pdf2df(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         for p in range(2):

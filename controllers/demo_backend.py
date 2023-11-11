@@ -12,16 +12,18 @@ if getattr(sys, 'frozen', False):
     working_dir = os.path.dirname(sys.executable)
 elif __file__:
     working_dir = os.path.split(os.path.dirname(__file__))[0]
+
+
 class MainWindow(demo.Ui_MainWindow,QMainWindow):
     db=None
     cur=None
-    current_plan={}
+    unsaved_plan={}
     current_course_graph=None
+    working_major=None
     working_dir=None
     config={}
     db_path=''
     open_combo=pyqtSignal(int)
-
 
     # TODO 增加更新前置信息的tool？
     def __init__(self):
@@ -30,10 +32,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.show()
         self._connect_sigs()
         self._eventFilter()
-        self.working_dir=working_dir
-        # print('in backend: '+working_dir)
         self.create_config()
-        self.db_path = self.working_dir+'/models/' + db_name
+        self.db_path = working_dir+'/models/' + db_name
         print(self.db_path)
         self.db, self.cur = DB.connect_db(self.db_path)
 
@@ -50,7 +50,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             plan.append(temp)
         return plan
 
-    # TODO save_plan_to_database: NOT Done
     def eventFilter(self,watched,event):
         if watched==self.yes_butt:
             if event.type()==QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
@@ -70,9 +69,9 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                     self.config['plans'].append({
                         'id': plan_id,
                         'name': plan_name,
-                        'major':self.current_plan[plan_name]
+                        'major':self.unsaved_plan[plan_name]
                     })
-                    major_name=self.current_plan[plan_name]
+                    major_name=self.unsaved_plan[plan_name]
 
                 for p in self.config['plans']:
                     if p['name']==plan_name:
@@ -80,7 +79,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                         major_name=p['major']
                 plan = self.get_plan_from_widget(wgt,major_name)
                 if DB.plan2DB(plan,self.db,self.cur,plan_id):
-                    # del self.current_plan[plan_name]
+                    print(self.unsaved_plan)
+                    # del self.unsaved_plan[plan_name]
                     return True
                 else:
                     return False
@@ -103,8 +103,14 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     #     print('combo '+str(index))
     def tab_changing(self,index):
         print('changing now!!!'+str(index))
+        if len(self.config['majors'])<=1:
+            return
+        for p in self.config['plans']:
+            if self.tabArea.tabText(index)==p['name'] and self.working_major!=p['major']:
+                self.build_courses_graph(p['major'])
+                self.working_major=p['major']
+                return
 
-    # TODO activated_triggered: select plan for viewing
     def combo_activated_triggered(self, index):
         combo=self.toolbar.findChild(QComboBox)
         plan_name=combo.itemText(index)
@@ -117,7 +123,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         plan=DB.DB2plan(plan_id,self.db,major_name)
         self.display_plan(plan,plan_name,True)
         return
-
 
     def toolbar_triggered(self, tool):
         print("toolbar triggered "+tool.text())
@@ -150,7 +155,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         if not input_ok or not major_name:
             return
         excel_name = major_name.split('.')[0] + '_prerequisites.xlsx'
-        excel_path=self.working_dir+'/models/'+major_name.split('.')[0] + '_prerequisites.xlsx'
+        excel_path=working_dir+'/models/'+major_name.split('.')[0] + '_prerequisites.xlsx'
 
         pdf_df = files2db.pdf2df(pdf_path)
 
@@ -169,7 +174,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         # putting prerequisites info into database
         table_name = major_name + '_prerequisites'
-        files2db.pre2db(table_name, self.working_dir+"/models/" + excel_name, self.db)
+        files2db.pre2db(table_name, working_dir+"/models/" + excel_name, self.db)
         if DB.check_table_empty(self.cur, table_name) or DB.check_table_exist(self.cur, table_name) is False:
             msg2_title = '警告'
             msg2_text = '导入信息为空，请正确导入先修课信息'
@@ -212,7 +217,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
-        self.current_plan[plan_name]=major_name
+        self.unsaved_plan[plan_name]=major_name
         self.display_plan(plan,plan_name)
 
     def build_courses_graph(self, major_name):
@@ -250,19 +255,19 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.current_course_graph=g
 
     def create_config(self):
-        if not os.path.exists(self.working_dir+'/models/config.json'):
+        if not os.path.exists(working_dir+'/models/config.json'):
             self.config={
                 'global_id':0,
                 'majors':[],
                 'plans':[]
             }
-            with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
+            with open(working_dir+'/models/config.json','w',encoding='utf-8') as config:
                 json.dump(self.config,config)
         else:
             self.load_config()
 
     def load_config(self):
-        cf=open(self.working_dir+'/models/config.json',encoding='utf-8')
+        cf=open(working_dir+'/models/config.json',encoding='utf-8')
         self.config=json.load(cf)
         combo=self.toolbar.findChild(QComboBox)
         plans=[]
@@ -278,7 +283,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         event.accept()
 
     def update_config(self):
-        with open(self.working_dir+'/models/config.json','w',encoding='utf-8') as config:
+        with open(working_dir+'/models/config.json','w',encoding='utf-8') as config:
             json.dump(self.config,config)
 
     # TODO tab_close_triggered: put plan into database when closing
@@ -287,11 +292,3 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     # def yes_butt_clicked(self):
     #     print("yes!")
-
-
-# if __name__=='__main__':
-#
-#     app=QApplication([])
-#     w=MainWindow()
-#     app.exec_()
-
