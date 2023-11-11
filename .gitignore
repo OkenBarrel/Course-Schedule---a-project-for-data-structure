@@ -5,7 +5,6 @@
 #.gitignore
 /dist
 /build
-!requirements.txt
 *.spec
 *.json
 *.csv
@@ -13,6 +12,7 @@
 <<<<<<< HEAD
 =======
 *.txt
+!requirements.txt
 *.pdf
 *.zip
 >>>>>>> develop
