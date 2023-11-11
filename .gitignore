@@ -5,6 +5,8 @@
 #.gitignore
 /dist
 /build
+*.txt
+!requirements.txt
 *.spec
 *.json
 *.csv
