@@ -8,10 +8,6 @@ from .topoSort import topoSort
 import json,os,sys,copy
 
 
-def handler(results):
-    print(type(results))
-    print(results)
-
 
 db_name='test.db'
 if getattr(sys, 'frozen', False):
@@ -102,6 +98,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.open_combo.connect(self.combo_activated_triggered)
         self.tabArea.tabCloseRequested.connect(self.tab_close_triggered)
         self.tabArea.currentChanged.connect(self.tab_changing)
+
         # self.mng.triggered[QAction].connect(self.menu_triggered)
         # self.mng_plan.triggered[QAction].connect(self.menu_triggered)
 
@@ -155,31 +152,21 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             new.results.connect(self.delete_plan)
             res=new.exec_()
             print(res)
-
         return
 
     def delete_plan(self,results):
         combo = self.toolbar.findChild(QComboBox)
         copied=copy.deepcopy(self.config)
-        index=0
         sql='delete from plans where plan_id='
         for p in copied['plans']:
-            print(p)
+            # print(p)
             if p['name'] in results:
                 self.cur.execute(sql+str(p['id']))
                 self.db.commit()
                 print('removing '+p['name'])
                 combo.removeItem(combo.findText(p['name']))
                 self.config['plans'].remove(p)
-
-            index+=1
-        print('config')
-        for p in self.config['plans']:
-            print(p)
-        print('copied')
-        for p in copied['plans']:
-            print(p)
-
+        return
 
     def import_courses(self,pdf_path):
 

@@ -1,7 +1,7 @@
 import os,sys
 from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QRadioButton,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtWidgets import QButtonGroup,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
 
 if getattr(sys, 'frozen', False):
@@ -106,8 +106,10 @@ class Ui_MainWindow(QMainWindow):
             gb_layout=QVBoxLayout()
             cnt+=1
             gb.setFixedSize(220, 680)
+            # wgt_in_gb=QWidget()
+            # bg=QButtonGroup(gb)
             for el in ele:
-                check=QCheckBox()
+                check=QCheckBox(parent=gb)
                 if chosen:
                     wrapped_word=formatting.word_wrap(el[0].name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
                 else:
@@ -116,12 +118,14 @@ class Ui_MainWindow(QMainWindow):
                 if chosen:
                     if el[0].compulsory:
                         check.setStyleSheet('''QCheckBox{color:red;}''')
+                        check.setEnabled(False)
                     if el[1]:
                         check.setChecked(True)
                 else:
                     if el.compulsory:
                         check.setStyleSheet('''QCheckBox{color:red;}''')
                         check.setChecked(True)
+                        check.setEnabled(False)
                 gb_layout.addWidget(check)
             gb.setLayout(gb_layout)
             wgt_layout.addWidget(gb)
@@ -130,6 +134,8 @@ class Ui_MainWindow(QMainWindow):
 
         self.tabArea.currentWidget().setWidget(wgt)
         print("done")
+        return
+
 
 class Ui_popup(QDialog):
     def setUI(self,popup,title,option):
@@ -150,5 +156,3 @@ class Ui_popup(QDialog):
         for e in option:
             gb_layout.addWidget(QCheckBox(str(e)))
         self.group.setLayout(gb_layout)
-
-
