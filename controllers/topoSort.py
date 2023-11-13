@@ -5,7 +5,7 @@ UNVISITED=0
 VISITED=1
 
 
-def topoSort(lnkGraph:lnkGraph.lnkGraph):
+def topoSort(lnkGraph:lnkGraph.lnkGraph,limits={}):
     res=[]
     l=len(lnkGraph.graph)
     visited=[UNVISITED]*l
@@ -25,14 +25,17 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph):
                 in0.push(node.ele)
             node=node.next
         # lnkGraph.graph[ver].show()
-        # credit += float(lnkGraph.graph[ver].head.ele.credit)
-        # credit<=17.5
-        if len(temp)<10:
-            temp.append(lnkGraph.graph[ver].head.ele)
+        course=lnkGraph.graph[ver].head.ele
+        if course.compulsory:
+            credit += float(course.credit)
+        else:
+            credit+=float(course.credit)/3.5
+        if credit<=17.5:
+            temp.append(course)
         else:
             res.append(temp)
-            temp= [lnkGraph.graph[ver].head.ele]
-            credit=0
+            temp= [course]
+            credit=float(course.credit)
         # lnkGraph.del_ver(ver)
         visited[ver]=VISITED
     res.append(temp)

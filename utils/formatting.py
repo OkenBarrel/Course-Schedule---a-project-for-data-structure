@@ -9,8 +9,9 @@ def word_wrap(words,widget_width,letter_width):
     while l-cur>num:
         res=res+words[cur:cur+num]+'\n'
         cur=cur+num
-    if cur!=l-1:
+    if cur!=l:
         res+=words[cur:l]
+
     return res
 
 

@@ -1,8 +1,9 @@
 import os,sys
 from PyQt5.QtGui import QIcon,QFontMetricsF
-from PyQt5.QtCore import Qt,QCoreApplication
-from PyQt5.QtWidgets import QButtonGroup,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtCore import pyqtSignal,Qt,QCoreApplication
+from PyQt5.QtWidgets import QGridLayout,QSizePolicy,QFrame,QLabel,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
+from functools import partial
 
 if getattr(sys, 'frozen', False):
     working_dir = os.path.dirname(sys.executable)
@@ -12,6 +13,7 @@ elif __file__:
 
 # TODO views: change the color scheme
 class Ui_MainWindow(QMainWindow):
+    checkbox_state_change=pyqtSignal(dict)
     def setupUI(self,MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1200,800)
@@ -94,47 +96,70 @@ class Ui_MainWindow(QMainWindow):
         return self.input_popup(title,prompt,item_list,'item')
 
     # TODO display_plan: compulsory courses should be in better style
-    def display_plan(self,plan,tab_name,chosen=False):
+    def display_plan(self,plan:list,tab_name:str,chosen=False):
         new_tab=QScrollArea()
         self.tabArea.addTab(new_tab,tab_name)
         self.tabArea.setCurrentWidget(new_tab)
         wgt=QWidget()
-        cnt=1
+        cnt_term=1
         wgt_layout=QHBoxLayout()
         for ele in plan:
-            gb=QGroupBox('term'+str(cnt))
+            gb=QGroupBox('term'+str(cnt_term))
             gb_layout=QVBoxLayout()
-            cnt+=1
+            gb_layout=QGridLayout()
+            # show_credit=QGroupBox('已选学分')
+            show_credit=QLabel()
+            show_credit.setFrameStyle(QFrame.Panel|QFrame.Sunken)
+            show_credit.setFixedHeight(30)
+            # show_credit.setGeometry(0,0,show_credit.size().width(),show_credit.size().height())
+            gb_layout.addWidget(show_credit)
+            # gb_layout.setStretchFactor(show_credit,1)
+            cnt_term+=1
+            credits=0
             gb.setFixedSize(220, 680)
-            # wgt_in_gb=QWidget()
-            # bg=QButtonGroup(gb)
+            # show_credit.setFixedSize(220,50)
             for el in ele:
                 check=QCheckBox(parent=gb)
                 if chosen:
-                    wrapped_word=formatting.word_wrap(el[0].name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
+                    course = el[0]
+                    wrapped_word=formatting.word_wrap(course.credit+' '+course.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
                 else:
-                    wrapped_word=formatting.word_wrap(el.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
+                    if el.name=='高级语言程序设计':
+                        print('what')
+                    wrapped_word=formatting.word_wrap(el.credit+' '+el.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
                 check.setText(wrapped_word)
                 if chosen:
-                    if el[0].compulsory:
+                    is_chosen=el[1]
+                    if course.compulsory:
                         check.setStyleSheet('''QCheckBox{color:red;}''')
                         check.setEnabled(False)
-                    if el[1]:
+                    if is_chosen:
                         check.setChecked(True)
+                        credits+=float(course.credit)
                 else:
                     if el.compulsory:
                         check.setStyleSheet('''QCheckBox{color:red;}''')
                         check.setChecked(True)
                         check.setEnabled(False)
+                        credits+=float(el.credit)
+                # check.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed)
+                check.stateChanged.connect(partial(self.check_change,check.text().replace('\n',''),cnt_term-1))
                 gb_layout.addWidget(check)
+                # print(check.geometry().width())
+                # gb_layout.setSpacing(0)
+                # print(gb_layout.spacing())
+                # gb_layout.setStretchFactor(check,10)
+            show_credit.setText('已选学分 '+str(credits))
+            # gb_layout.setSpacing(-50)
             gb.setLayout(gb_layout)
             wgt_layout.addWidget(gb)
-
         wgt.setLayout(wgt_layout)
-
         self.tabArea.currentWidget().setWidget(wgt)
         print("done")
         return
+
+    def check_change(self,course_name,term,state):
+        pass
 
 
 class Ui_popup(QDialog):
@@ -154,5 +179,9 @@ class Ui_popup(QDialog):
     def display_choice(self,option):
         gb_layout=QVBoxLayout()
         for e in option:
-            gb_layout.addWidget(QCheckBox(str(e)))
+            c=QCheckBox(str(e))
+            gb_layout.addWidget(c)
+
+            if gb_layout.setStretchFactor(c,0):
+                print('set 0 stretch: '+c.text())
         self.group.setLayout(gb_layout)

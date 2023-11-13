@@ -35,6 +35,13 @@ class lnkGraph:
                 return e
         return False
 
+    def find_ver_by_name(self,name):
+        l=len(self.graph)
+        for e in range(l):
+            if self.graph[e].head.ele.name==name:
+                return self.graph[e].head.ele
+        return False
+
     def show_ver(self):
         for v in self.graph:
             v.show()

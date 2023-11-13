@@ -1,5 +1,5 @@
 import os.path
-from PyQt5.QtWidgets import QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
+from PyQt5.QtWidgets import QLabel,QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
 from views import demo
 from PyQt5.QtCore import QEvent,pyqtSignal
 from utils import DB,files2db
@@ -47,7 +47,9 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         for child in widget.findChildren(QGroupBox):
             temp=[]
             for grand in child.findChildren(QCheckBox):
-                id=DB.get_courseID(grand.text().replace('\n',''),self.cur,major_name)
+                name=grand.text().replace('\n','')
+                print(name)
+                id=DB.get_courseID(name.split(' ')[1],self.cur,major_name)
                 temp.append((id,grand.checkState()))
             plan.append(temp)
         return plan
@@ -124,8 +126,29 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 major_name=p['major']
                 break
         plan=DB.DB2plan(plan_id,self.db,major_name)
+        self.build_courses_graph(major_name)
         self.display_plan(plan,plan_name,True)
         return
+
+    def check_change(self,course_name,term,state):
+        print(course_name + ' at ' + str(term) + ' is now ' + str(state))
+        self.tabArea.currentIndex()
+        wgt=self.tabArea.currentWidget().widget()
+        print(type(wgt))
+        for gb in wgt.findChildren(QGroupBox):
+            if gb.title()=='term'+str(term):
+                show_credit=gb.findChild(QLabel)
+                # print(course_name.split(' ')[0])
+                [credit,name]=course_name.split(' ')
+
+                # course = self.current_course_graph.find_ver_by_name()
+                cre = float(show_credit.text()[5:])
+                if state:
+                    cre+=float(credit)
+                else:
+                    cre-=float(credit)
+                show_credit.setText('已选学分 '+str(cre))
+                print(cre)
 
     def toolbar_triggered(self, tool):
         print("toolbar triggered "+tool.text())
@@ -225,8 +248,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         combo=self.toolbar.findChild(QComboBox)
 
         opened_tabs=[self.tabArea.tabText(tab_index) for tab_index in range(tab_num)]
-        # combo_num=combo.coun
-        # opened_tabs+=[for combo_index in range()]
+
         if plan_name in opened_tabs:
             for index in range(tab_num):
                 if self.tabArea.tabText(index)==plan_name:
