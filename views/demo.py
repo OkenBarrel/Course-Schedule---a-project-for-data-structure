@@ -105,60 +105,67 @@ class Ui_MainWindow(QMainWindow):
         wgt_layout=QHBoxLayout()
         for ele in plan:
             gb=QGroupBox('term'+str(cnt_term))
-            gb_layout=QVBoxLayout()
+            gb_layout_out=QVBoxLayout()
             gb_layout=QGridLayout()
+            gb_layout.setSpacing(20)
             # show_credit=QGroupBox('已选学分')
             show_credit=QLabel()
             show_credit.setFrameStyle(QFrame.Panel|QFrame.Sunken)
             show_credit.setFixedHeight(30)
             # show_credit.setGeometry(0,0,show_credit.size().width(),show_credit.size().height())
-            gb_layout.addWidget(show_credit)
+            gb_layout_out.addWidget(show_credit)
             # gb_layout.setStretchFactor(show_credit,1)
             cnt_term+=1
             credits=0
-            gb.setFixedSize(220, 680)
+            cnt_course=0
+            gb.setFixedSize(240, 680)
             # show_credit.setFixedSize(220,50)
-            for el in ele:
+            for cnt_course,el in enumerate(ele):
                 check=QCheckBox(parent=gb)
+                gb_layout.addWidget(check,cnt_course,0)
                 if chosen:
                     course = el[0]
-                    wrapped_word=formatting.word_wrap(course.credit+' '+course.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
-                else:
-                    if el.name=='高级语言程序设计':
-                        print('what')
-                    wrapped_word=formatting.word_wrap(el.credit+' '+el.name,gb.size().width(),QFontMetricsF(check.font()).width("新"))
-                check.setText(wrapped_word)
-                if chosen:
-                    is_chosen=el[1]
+                    wrapped_word=formatting.word_wrap(course.name,200,QFontMetricsF(check.font()).width("新"))
+                    credit_text=course.credit
+                    credit_label = QLabel(credit_text)
+                    name_label = QLabel(wrapped_word)
+                    is_chosen = el[1]
                     if course.compulsory:
-                        check.setStyleSheet('''QCheckBox{color:red;}''')
+                        name_label.setStyleSheet('''QLabel{color:red;}''')
+                        credit_label.setStyleSheet('''QLabel{color:red;}''')
                         check.setEnabled(False)
                     if is_chosen:
                         check.setChecked(True)
-                        credits+=float(course.credit)
+                        credits += float(course.credit)
                 else:
+                    wrapped_word=formatting.word_wrap(el.name,200,QFontMetricsF(check.font()).width("新"))
+                    credit_text=el.credit
+                    credit_label = QLabel(credit_text)
+                    name_label = QLabel(wrapped_word)
                     if el.compulsory:
-                        check.setStyleSheet('''QCheckBox{color:red;}''')
+                        credit_label.setStyleSheet('''QLabel{color:red;}''')
+                        name_label.setStyleSheet('''QLabel{color:red;}''')
                         check.setChecked(True)
                         check.setEnabled(False)
-                        credits+=float(el.credit)
+                        credits += float(el.credit)
+                gb_layout.addWidget(name_label, cnt_course, 2)
+                gb_layout.addWidget(credit_label, cnt_course, 1)
                 # check.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed)
-                check.stateChanged.connect(partial(self.check_change,check.text().replace('\n',''),cnt_term-1))
-                gb_layout.addWidget(check)
-                # print(check.geometry().width())
-                # gb_layout.setSpacing(0)
-                # print(gb_layout.spacing())
-                # gb_layout.setStretchFactor(check,10)
+                check.stateChanged.connect(partial(self.check_change,wrapped_word.replace('\n',''),cnt_term-1,credit_text))
+
             show_credit.setText('已选学分 '+str(credits))
-            # gb_layout.setSpacing(-50)
-            gb.setLayout(gb_layout)
+            gb_layout_out.addLayout(gb_layout)
+            gb_layout_out.setStretch(0,1)
+            gb_layout_out.setStretch(1,10)
+            gb.setLayout(gb_layout_out)
+
             wgt_layout.addWidget(gb)
         wgt.setLayout(wgt_layout)
         self.tabArea.currentWidget().setWidget(wgt)
         print("done")
         return
 
-    def check_change(self,course_name,term,state):
+    def check_change(self,course_name,term,credit,state):
         pass
 
 

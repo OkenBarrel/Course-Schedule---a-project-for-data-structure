@@ -1,5 +1,5 @@
 import os.path
-from PyQt5.QtWidgets import QLabel,QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
+from PyQt5.QtWidgets import QGridLayout,QWidget,QLabel,QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
 from views import demo
 from PyQt5.QtCore import QEvent,pyqtSignal
 from utils import DB,files2db
@@ -42,15 +42,25 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     def _eventFilter(self):
         self.yes_butt.installEventFilter(self)
 
-    def get_plan_from_widget(self,widget,major_name):
+    def get_plan_from_widget(self,widget:QWidget,major_name):
         plan=[]
+
         for child in widget.findChildren(QGroupBox):
             temp=[]
-            for grand in child.findChildren(QCheckBox):
-                name=grand.text().replace('\n','')
-                print(name)
-                id=DB.get_courseID(name.split(' ')[1],self.cur,major_name)
-                temp.append((id,grand.checkState()))
+            layout = child.layout().itemAt(1)
+            row = layout.rowCount()
+            for r in range(row):
+                check = layout.itemAtPosition(r, 0)
+                name_label = layout.itemAtPosition(r,2).widget()
+                print(type(name_label))
+                name=name_label.text().replace('\n','')
+                id = DB.get_courseID(name, self.cur, major_name)
+                temp.append((id,check.widget().checkState()))
+            # for grand in child.findChildren(QCheckBox):
+            #     name=grand.text().replace('\n','')
+            #     print(name)
+            #     id=DB.get_courseID(name.split(' ')[1],self.cur,major_name)
+            #     temp.append((id,grand.checkState()))
             plan.append(temp)
         return plan
 
@@ -130,7 +140,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.display_plan(plan,plan_name,True)
         return
 
-    def check_change(self,course_name,term,state):
+    def check_change(self,course_name,term,credit,state):
         print(course_name + ' at ' + str(term) + ' is now ' + str(state))
         self.tabArea.currentIndex()
         wgt=self.tabArea.currentWidget().widget()
@@ -139,8 +149,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             if gb.title()=='term'+str(term):
                 show_credit=gb.findChild(QLabel)
                 # print(course_name.split(' ')[0])
-                [credit,name]=course_name.split(' ')
-
+                # name=course_name
                 # course = self.current_course_graph.find_ver_by_name()
                 cre = float(show_credit.text()[5:])
                 if state:
