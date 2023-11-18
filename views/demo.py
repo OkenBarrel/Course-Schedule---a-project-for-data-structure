@@ -1,9 +1,14 @@
 import os,sys
-from PyQt5.QtGui import QIcon,QFontMetricsF
-from PyQt5.QtCore import pyqtSignal,Qt,QCoreApplication
-from PyQt5.QtWidgets import QGridLayout,QSizePolicy,QFrame,QLabel,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,QMainWindow,QHBoxLayout,QDockWidget
+from PyQt5.QtGui import QDropEvent,QDrag,QDragEnterEvent,QMouseEvent,QIcon,QFontMetricsF
+from PyQt5.QtCore import QMimeData,pyqtSignal,Qt,QCoreApplication
+from PyQt5.QtWidgets import QGridLayout,QFrame,QLabel,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,\
+                            QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,\
+                            QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
 from functools import partial
+from controllers.DragWidget import DragWidget
+# from controllers.demo_backend import DragWidget
+
 
 if getattr(sys, 'frozen', False):
     working_dir = os.path.dirname(sys.executable)
@@ -24,9 +29,15 @@ class Ui_MainWindow(QMainWindow):
         # self.major_lable=QLabel('none yet')
 
         self.dock=QDockWidget("settings")
+        self.dragTest = DragWidget(self.dock)
+        # self.dragTest.addWidget(self.yes_butt)
+        l=QVBoxLayout()
+        l.addWidget(QGroupBox("test4Drag"))
+        self.dragTest.setLayout(l)
         wgt=QWidget()
         dock_layout=QVBoxLayout()
         dock_layout.addWidget(self.yes_butt)
+        dock_layout.addWidget(self.dragTest)
         dock_layout.addWidget(self.no_butt)
         wgt.setStyleSheet("""
             .QWidget {background:#545d64;}    
@@ -104,31 +115,38 @@ class Ui_MainWindow(QMainWindow):
         cnt_term=1
         wgt_layout=QHBoxLayout()
         for ele in plan:
-            gb=QGroupBox('term'+str(cnt_term))
+            gb=QGroupBox('term'+str(cnt_term),parent=wgt)
             gb_layout_out=QVBoxLayout()
-            gb_layout=QGridLayout()
-            gb_layout.setSpacing(20)
-            # show_credit=QGroupBox('已选学分')
+            drag_widget=DragWidget()
+            drag_widget.setFixedSize(240,630)
+
+            # gb_layout=QGridLayout()
+            # gb_layout.setSpacing(20)
+
             show_credit=QLabel()
             show_credit.setFrameStyle(QFrame.Panel|QFrame.Sunken)
             show_credit.setFixedHeight(30)
-            # show_credit.setGeometry(0,0,show_credit.size().width(),show_credit.size().height())
+
             gb_layout_out.addWidget(show_credit)
-            # gb_layout.setStretchFactor(show_credit,1)
             cnt_term+=1
             credits=0
             cnt_course=0
             gb.setFixedSize(240, 680)
-            # show_credit.setFixedSize(220,50)
             for cnt_course,el in enumerate(ele):
-                check=QCheckBox(parent=gb)
-                gb_layout.addWidget(check,cnt_course,0)
+                inner_wgt=QWidget()
+                inner_layout=QHBoxLayout()
+
+                check=QCheckBox(parent=inner_wgt)
+                inner_layout.addWidget(check)
+                # gb_layout.addWidget(check,cnt_course,0)
+                credit_label = QLabel(parent=inner_wgt)
+                name_label = QLabel(parent=inner_wgt)
                 if chosen:
                     course = el[0]
-                    wrapped_word=formatting.word_wrap(course.name,200,QFontMetricsF(check.font()).width("新"))
+                    wrapped_word=formatting.word_wrap(course.name,195,QFontMetricsF(check.font()).width("新"))
                     credit_text=course.credit
-                    credit_label = QLabel(credit_text)
-                    name_label = QLabel(wrapped_word)
+                    # credit_label = QLabel(credit_text,parent=inner_wgt)
+                    # name_label = QLabel(wrapped_word,parent=inner_wgt)
                     is_chosen = el[1]
                     if course.compulsory:
                         name_label.setStyleSheet('''QLabel{color:red;}''')
@@ -138,26 +156,36 @@ class Ui_MainWindow(QMainWindow):
                         check.setChecked(True)
                         credits += float(course.credit)
                 else:
-                    wrapped_word=formatting.word_wrap(el.name,200,QFontMetricsF(check.font()).width("新"))
+                    wrapped_word=formatting.word_wrap(el.name,195,QFontMetricsF(check.font()).width("新"))
                     credit_text=el.credit
-                    credit_label = QLabel(credit_text)
-                    name_label = QLabel(wrapped_word)
+                    # credit_label = QLabel(credit_text)
+                    # name_label = QLabel(wrapped_word)
                     if el.compulsory:
                         credit_label.setStyleSheet('''QLabel{color:red;}''')
                         name_label.setStyleSheet('''QLabel{color:red;}''')
                         check.setChecked(True)
                         check.setEnabled(False)
                         credits += float(el.credit)
-                gb_layout.addWidget(name_label, cnt_course, 2)
-                gb_layout.addWidget(credit_label, cnt_course, 1)
-                # check.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed)
+                credit_label.setText(credit_text)
+                credit_label.setEnabled(False)
+                name_label.setText(wrapped_word)
+                name_label.setEnabled(False)
+                inner_layout.addWidget(credit_label)
+                inner_layout.addWidget(name_label)
+                inner_wgt.setLayout(inner_layout)
+                drag_widget.addWidget(inner_wgt)
+                # gb_layout.addWidget(name_label, cnt_course, 2)
+                # gb_layout.addWidget(credit_label, cnt_course, 1)
                 check.stateChanged.connect(partial(self.check_change,wrapped_word.replace('\n',''),cnt_term-1,credit_text))
 
             show_credit.setText('已选学分 '+str(credits))
-            gb_layout_out.addLayout(gb_layout)
+            gb_layout_out.addWidget(drag_widget)
+            # gb_layout_out.addLayout(gb_layout)
             gb_layout_out.setStretch(0,1)
             gb_layout_out.setStretch(1,10)
             gb.setLayout(gb_layout_out)
+            if drag_widget==gb.findChild(DragWidget):
+                print('YES DRAG')
 
             wgt_layout.addWidget(gb)
         wgt.setLayout(wgt_layout)

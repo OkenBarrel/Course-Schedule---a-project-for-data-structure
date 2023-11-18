@@ -1,10 +1,12 @@
 import os.path
 from PyQt5.QtWidgets import QGridLayout,QWidget,QLabel,QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
 from views import demo
-from PyQt5.QtCore import QEvent,pyqtSignal
+from PyQt5.QtCore import QMimeData,QEvent,pyqtSignal
+from PyQt5.QtGui import QDragEnterEvent,QDrag,QMouseEvent
 from utils import DB,files2db
 from models import course,lnkGraph
 from .topoSort import topoSort
+from .DragWidget import DragWidget
 import json,os,sys,copy
 
 
@@ -47,15 +49,26 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
         for child in widget.findChildren(QGroupBox):
             temp=[]
-            layout = child.layout().itemAt(1)
-            row = layout.rowCount()
-            for r in range(row):
-                check = layout.itemAtPosition(r, 0)
-                name_label = layout.itemAtPosition(r,2).widget()
-                print(type(name_label))
+            drag_widget=child.findChild(DragWidget)
+            cnt=drag_widget.layout.count()
+            for w in range(cnt):
+                wgt=drag_widget.layout.itemAt(w).widget()
+                wgt_layout=wgt.layout()
+                check=wgt_layout.itemAt(0).widget()
+                credit_label = wgt_layout.itemAt(1).widget()
+                name_label=wgt_layout.itemAt(2).widget()
                 name=name_label.text().replace('\n','')
                 id = DB.get_courseID(name, self.cur, major_name)
-                temp.append((id,check.widget().checkState()))
+                temp.append((id,check.checkState()))
+            # layout = child.layout().itemAt(1)
+            # row = layout.rowCount()
+            # for r in range(row):
+            #     check = layout.itemAtPosition(r, 0)
+            #     name_label = layout.itemAtPosition(r,2).widget()
+            #     print(type(name_label))
+            #     name=name_label.text().replace('\n','')
+            #     id = DB.get_courseID(name, self.cur, major_name)
+            #     temp.append((id,check.widget().checkState()))
             # for grand in child.findChildren(QCheckBox):
             #     name=grand.text().replace('\n','')
             #     print(name)
@@ -367,3 +380,5 @@ class Pop_up(demo.Ui_popup,QDialog):
         print(deleted_plan)
         self.results.emit(deleted_plan)
         self.accept()
+
+

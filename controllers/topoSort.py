@@ -29,7 +29,7 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,limits={}):
         if course.compulsory:
             credit += float(course.credit)
         else:
-            credit+=float(course.credit)/3.5
+            credit+=float(course.credit)/2
         if credit<=17.5:
             temp.append(course)
         else:
