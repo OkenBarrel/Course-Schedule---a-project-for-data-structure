@@ -1,8 +1,10 @@
 from PyQt5.QtGui import QDropEvent,QDrag,QDragEnterEvent
-from PyQt5.QtCore import QMimeData,Qt
-from PyQt5.QtWidgets import QLabel,QWidget,QVBoxLayout
+from PyQt5.QtCore import QMimeData,Qt,pyqtSignal
+from PyQt5.QtWidgets import QWidget,QVBoxLayout
+
 
 class DragWidget(QWidget):
+    drop=pyqtSignal(dict)
     def __init__(self ,parent=None):
         super(DragWidget ,self).__init__(parent)
         self.setAcceptDrops(True)
@@ -11,22 +13,19 @@ class DragWidget(QWidget):
         self.setStyleSheet("""QWidget{background:aqua;}""")
 
     def addWidget(self ,widget):
-        print("into add")
         self.layout.addWidget(widget)
 
     def mousePressEvent(self ,e):
         print(e)
-        print("mouse press")
-        item =self.childAt(e.pos()).parent()
-        if item==None:
+        item = self.childAt(e.pos()).parent()
+        if item == None:
             return
-        index =self.layout.indexOf(item)
+        index = self.layout.indexOf(item)
 
-        self.drag =QDrag(item)
-        mime =QMimeData()
+        self.drag = QDrag(item)
+        mime = QMimeData()
         mime.setText(str(index))
         self.drag.setMimeData(mime)
-        self.drag.setHotSpot(e.pos( ) -item.pos())
         print('end' + str(item))
         self.drag.exec_(Qt.MoveAction)
         print('end' + str(item))
@@ -43,21 +42,20 @@ class DragWidget(QWidget):
         print("target item " +str(target_item))
         while type(target_item )!=QWidget:
             target_item= target_item.parent()
-        for e in target_item.findChildren(QLabel):
-            print(e.text())
-
         source_index =int(source_drag_widget.drag.mimeData().text())
         print(source_index)
-        old_item =source_drag_widget.layout.takeAt(source_index).widget()
+        old_item = source_drag_widget.layout.takeAt(source_index).widget()
         while type(old_item)!=QWidget:
             old_item =old_item.parent()
-        for e in old_item.findChildren(QLabel):
-            print(e.text())
+        check=old_item.layout().itemAt(0).widget()
+        credit=check.checkState()==2 and float(old_item.layout().itemAt(1).widget().text()) or 0
+        # print(credit)
         target_index =self.layout.indexOf(target_item)
         self.layout.insertWidget(target_index ,old_item)
+        sig={"credit":credit,"source_term":source_drag_widget.parent().title()[-1]}
+        self.drop.emit(sig)
 
     def dragEnterEvent(self, e: QDragEnterEvent) -> None:
         e.setDropAction(Qt.MoveAction)
         e.accept()
         return
-

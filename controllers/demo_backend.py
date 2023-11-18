@@ -213,6 +213,29 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 self.config['plans'].remove(p)
         return
 
+    def drop(self,target_term,sig):
+        '''
+        if sig['credit']==0 it means that changed course is not chosen
+        '''
+        print(str(sig['credit']) + 'from term' + sig['source_term']+' to term'+str(target_term))
+        from_index=int(sig['source_term'])-1
+        to_index=target_term-1
+        wgt = self.tabArea.currentWidget().widget()
+        from_gb=wgt.layout().itemAt(from_index).widget()
+        to_gb=wgt.layout().itemAt(to_index).widget()
+
+        if sig['credit']!=0:
+            from_credit_label=from_gb.layout().itemAt(0).widget()
+            to_credit_label=to_gb.layout().itemAt(0).widget()
+            print(from_credit_label.text()[5:])
+            print(to_credit_label.text()[5:])
+            from_credit=float(from_credit_label.text()[5:])-sig['credit']
+            to_credit=float(to_credit_label.text()[5:])+sig['credit']
+            from_credit_label.setText('已选学分 '+str(from_credit))
+            to_credit_label.setText('已选学分 '+str(to_credit))
+
+        # wgt.layout().item
+
     def import_courses(self,pdf_path):
 
         # pdf_dir = pdf_path.rsplit('/', 1)[0]
