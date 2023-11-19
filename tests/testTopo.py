@@ -37,10 +37,10 @@ class test_topoSort(unittest.TestCase):
             after_index = self.g.find_ver_by_ID(courseID)
             pre_index = self.g.find_ver_by_ID(preID)
 
-            if pre_index and after_index:  # out degree (pre_index course) in link
+            if pre_index!=-1 and after_index!=-1:  # out degree (pre_index course) in link
                 # g.graph[pre_index].append(after_index)
                 self.g.add_edge(pre_index, after_index)
-        # self.g.show_ver()
+        self.g.show_ver()
         # print(self.g.indegree)
         # DB.close_db(db,cur)
         return
@@ -62,11 +62,17 @@ class test_topoSort(unittest.TestCase):
             if pre_index!=-1 and after_index!=-1:  # out degree (pre_index course) in link
                 # g.graph[pre_index].append(after_index)
                 n.add_edge(pre_index, after_index)
-        n.show_ver()
+        # n.show_ver()
         print(n.indegree)
         res2=self.g.find_next_after(1)
         print(res)
-        print(res2)
+        print(self.g.indegree)
+        plan=topoSort.topoSort(self.g,res,2)
+        length = len(plan)
+        for term in range(length):
+            print('term'+str(term+1))
+            for c in plan[term]:
+                print(c)
 
     def test_topoSort_with_courses_graph_with_no_custom_setting(self):
 

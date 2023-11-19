@@ -148,6 +148,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 plan_id=p['id']
                 major_name=p['major']
                 break
+        self.working_major=major_name
         plan=DB.DB2plan(plan_id,self.db,major_name)
         self.current_course_graph=self.build_courses_graph(major_name)
         self.display_plan(plan,plan_name,True)
@@ -155,7 +156,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     def check_change(self,course_name,term,credit,state):
         print(course_name + ' at ' + str(term) + ' is now ' + str(state))
-        self.tabArea.currentIndex()
+        # self.tabArea.currentIndex()
         wgt=self.tabArea.currentWidget().widget()
         print(type(wgt))
         for gb in wgt.findChildren(QGroupBox):
@@ -222,14 +223,27 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         from_gb=wgt.layout().itemAt(from_index).widget()
         to_gb=wgt.layout().itemAt(to_index).widget()
         course_node_num=self.current_course_graph.find_ver_num_by_name(course_name)
-        if self.current_course_graph.indegree[course_node_num]!=0:
+        afters_num = [course_node_num]
+        afters_num += self.current_course_graph.find_all_after(course_node_num)
+        if len(afters_num)>1 and to_index>from_index:
             print("topo again")
+            print('working major: '+self.working_major)
             wgt = self.tabArea.currentWidget().widget()
-            plan=self.get_plan_from_widget(wgt,self.working_major)
-            afters_num=[course_node_num]
-            afters_num+=self.current_course_graph.find_all_after(course_node_num)
-            afters_id=[self.current_course_graph.graph[n].head.ele.courseID for n in afters_num]
-
+            # plan=self.get_plan_from_widget(wgt,self.working_major)
+            limit=to_index
+            print(afters_num)
+            print(to_index)
+            self.current_course_graph.show_ver()
+            plan=topoSort(self.current_course_graph,afters_num,to_index)
+            print(self.current_course_graph.indegree)
+            length = len(plan)
+            for term in range(length):
+                print('term' + str(term + 1))
+                for c in plan[term]:
+                    print(c)
+            tab_index=self.tabArea.currentIndex()
+            tab_name=self.tabArea.tabText(tab_index)
+            self.display_plan(plan,tab_name)
 
             # n=lnkGraph.lnkGraph()
             # afters=[course_node_num]
@@ -256,16 +270,16 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             # plan=topoSort(n)
             # final_plan=topoSort(rest_graph,plan)
 
-            return
-        if sig['credit']!=0:
-            from_credit_label=from_gb.layout().itemAt(0).widget()
-            to_credit_label=to_gb.layout().itemAt(0).widget()
-            print(from_credit_label.text()[5:])
-            print(to_credit_label.text()[5:])
-            from_credit=float(from_credit_label.text()[5:])-sig['credit']
-            to_credit=float(to_credit_label.text()[5:])+sig['credit']
-            from_credit_label.setText('已选学分 '+str(from_credit))
-            to_credit_label.setText('已选学分 '+str(to_credit))
+
+        # if sig['credit']!=0:
+        #     from_credit_label=from_gb.layout().itemAt(0).widget()
+        #     to_credit_label=to_gb.layout().itemAt(0).widget()
+        #     print(from_credit_label.text()[5:])
+        #     print(to_credit_label.text()[5:])
+        #     from_credit=float(from_credit_label.text()[5:])-sig['credit']
+        #     to_credit=float(to_credit_label.text()[5:])+sig['credit']
+        #     from_credit_label.setText('已选学分 '+str(from_credit))
+        #     to_credit_label.setText('已选学分 '+str(to_credit))
 
         # wgt.layout().item
 
@@ -338,35 +352,33 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         self.current_course_graph=self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
+        self.working_major=major_name
         self.unsaved_plan[plan_name]=major_name
         self.display_plan(plan,plan_name)
 
-    def build_courses_graph(self, major_name,checkout=[]):
+    def build_courses_graph(self, major_name):
         g=lnkGraph.lnkGraph()
-        cursor = self.cur.execute('''select * from 计算机 as c
-                                        where not exists (select p.courseID from  计算机_prerequisites as p 
+        cursor = self.cur.execute(f'''select * from {major_name} as c
+                                        where not exists (select p.courseID from  {major_name}_prerequisites as p 
                                         where c.courseId=p.courseID 
                                         group by p.courseID);''')
+
         for row in cursor:
             # print(row)
-            if row[0] in checkout:
-                continue
             c = course.course(row[0], row[1], row[2], row[3], row[4], row[5])
             g.append_ver(c)
-        cursor = self.cur.execute('''select p.courseID,count(*) as num,c.name,c.final,c.credit,c.department,c.compulsory 
-                                    from 计算机_prerequisites as p,计算机 as c 
+        cursor = self.cur.execute(f'''select p.courseID,count(*) as num,c.name,c.final,c.credit,c.department,c.compulsory 
+                                    from {major_name}_prerequisites as p,{major_name} as c 
                                     where c.courseId=p.courseID 
                                     group by p.courseID 
                                     order by num;''')
         # print('again!!!')
         for row2 in cursor:
             # print(row2)
-            if row2[0] in checkout:
-                continue
             c = course.course(row2[0], row2[2], row2[3], row2[4], row2[5], row2[6])
             g.append_ver(c)
         # g.show_ver()
-        cursor = self.cur.execute('select * from 计算机_prerequisites;')
+        cursor = self.cur.execute(f'select * from {major_name}_prerequisites;')
         for row in cursor:
             courseID = row[0]
             preID = row[1]

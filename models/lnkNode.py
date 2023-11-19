@@ -1,3 +1,4 @@
+
 class lnkNode:
     def __init__(self,ele):
         self.ele=ele
@@ -7,4 +8,4 @@ class lnkNode:
     #     self.ele=None
     #     self.next=None
     def show(self):
-        print(self.ele)
+        print(str(self.ele))

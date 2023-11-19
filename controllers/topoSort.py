@@ -5,30 +5,28 @@ UNVISITED=0
 VISITED=1
 
 
-def topoSort(lnkGraph:lnkGraph.lnkGraph,old=[]):
-    res=old[:]
+def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit=0):
     l=len(lnkGraph.graph)
+    res=[]
     visited=[UNVISITED]*l
-    indegree=lnkGraph.indegree
+    indegree=lnkGraph.indegree[:]
     in0=Queue()
     next=Queue()
     temp=[]
     credit=0
-    cnt=0
     for e in range(l):
         if indegree[e]==0:
             in0.push(e)
-    while not in0.is_empty():
+    while not in0.is_empty() or not next.is_empty():
         while not in0.is_empty():
             ver = in0.dequeue()
+            if ver in need_change and len(res)<=limit:
+                next.push(ver)
+                continue
             course = lnkGraph.graph[ver].head.ele
             node = lnkGraph.graph[ver].head.next
-            if course.name == '大学物理Ⅰ-2':
-                print('dawu')
             if course.compulsory:
                 credit += float(course.credit)
-            else:
-                credit += float(course.credit) / 2
             if credit <= 17.5:
                 temp.append(course)
             else:
@@ -55,6 +53,8 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,old=[]):
             if ver in no:
                 later.append(ver)
                 continue
+            if ver in need_change and len(res)<limit-1:
+                later.append(ver)
             in0.push(ver)
         for e in later:
             next.push(e)

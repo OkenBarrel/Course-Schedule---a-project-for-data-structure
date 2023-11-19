@@ -92,9 +92,6 @@ class lnkGraph:
         for v in self.graph:
             v.show()
 
-    def show_link(self):
-        for v in self.graph:
-            v.show()
 
     def in_degree(self,index):
         return self.indegree[index]
