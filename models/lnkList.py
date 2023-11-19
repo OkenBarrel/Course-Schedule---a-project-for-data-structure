@@ -5,6 +5,7 @@ class lnkList:
         self.size=1
 
     def append(self,ele):
+        # print('lnk appending')
         if self.size==0:
             self.head=lnkNode(ele)
         else:
@@ -12,12 +13,15 @@ class lnkList:
             while h.next!=None:
                 h=h.next
             h.next=lnkNode(ele)
+            self.size+=1
 
     def size(self):
         return self.size
 
     def is_empty(self):
         return self.head is None
+    def link_is_empty(self):
+        return self.size==1
 
     def show(self):
         if self.is_empty():
@@ -36,4 +40,5 @@ class lnkList:
             while n.next:
                 if n.next.ele==ele:
                     n.next=n.next.next
+                    self.size-=1
 

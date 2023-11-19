@@ -135,7 +135,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         for p in self.config['plans']:
             if self.tabArea.tabText(index)==p['name'] and self.working_major!=p['major']:
-                self.build_courses_graph(p['major'])
+                self.current_course_graph=self.build_courses_graph(p['major'])
                 self.working_major=p['major']
                 return
 
@@ -149,7 +149,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 major_name=p['major']
                 break
         plan=DB.DB2plan(plan_id,self.db,major_name)
-        self.build_courses_graph(major_name)
+        self.current_course_graph=self.build_courses_graph(major_name)
         self.display_plan(plan,plan_name,True)
         return
 
@@ -161,9 +161,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         for gb in wgt.findChildren(QGroupBox):
             if gb.title()=='term'+str(term):
                 show_credit=gb.findChild(QLabel)
-                # print(course_name.split(' ')[0])
-                # name=course_name
-                # course = self.current_course_graph.find_ver_by_name()
                 cre = float(show_credit.text()[5:])
                 if state:
                     cre+=float(credit)
@@ -217,13 +214,49 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         '''
         if sig['credit']==0 it means that changed course is not chosen
         '''
-        print(str(sig['credit']) + 'from term' + sig['source_term']+' to term'+str(target_term))
+        print(str(sig['credit'])+' '+sig['name']+ 'from term' + sig['source_term']+' to term'+str(target_term))
         from_index=int(sig['source_term'])-1
         to_index=target_term-1
+        course_name=sig['name']
         wgt = self.tabArea.currentWidget().widget()
         from_gb=wgt.layout().itemAt(from_index).widget()
         to_gb=wgt.layout().itemAt(to_index).widget()
+        course_node_num=self.current_course_graph.find_ver_num_by_name(course_name)
+        if self.current_course_graph.indegree[course_node_num]!=0:
+            print("topo again")
+            wgt = self.tabArea.currentWidget().widget()
+            plan=self.get_plan_from_widget(wgt,self.working_major)
+            afters_num=[course_node_num]
+            afters_num+=self.current_course_graph.find_all_after(course_node_num)
+            afters_id=[self.current_course_graph.graph[n].head.ele.courseID for n in afters_num]
 
+
+            # n=lnkGraph.lnkGraph()
+            # afters=[course_node_num]
+            # checkout=[]
+            # afters+=self.current_course_graph.find_all_after(course_node_num)
+            # for num in afters:
+            #     n.append_ver(self.current_course_graph.graph[num].head.ele)
+            # cursor = self.cur.execute('select * from 计算机_prerequisites;')
+            # for row in cursor:
+            #     courseID = row[0]
+            #     preID = row[1]
+            #     # print(row[0]+" "+row[1])
+            #     after_index = n.find_ver_by_ID(courseID)
+            #     pre_index = n.find_ver_by_ID(preID)
+            #     if pre_index!=-1 and after_index!=-1:  # out degree (pre_index course) in link
+            #         # g.graph[pre_index].append(after_index)
+            #         if courseID not in checkout:
+            #             checkout.append(checkout)
+            #         if preID not in checkout:
+            #             checkout.append(preID)
+            #         n.add_edge(pre_index, after_index)
+            # n.show_ver()
+            # rest_graph=self.build_courses_graph(self.working_major,checkout)
+            # plan=topoSort(n)
+            # final_plan=topoSort(rest_graph,plan)
+
+            return
         if sig['credit']!=0:
             from_credit_label=from_gb.layout().itemAt(0).widget()
             to_credit_label=to_gb.layout().itemAt(0).widget()
@@ -303,12 +336,12 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         if combo_index!=-1:
             self.open_combo.emit(combo_index)
             return
-        self.build_courses_graph(major_name)
+        self.current_course_graph=self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
         self.unsaved_plan[plan_name]=major_name
         self.display_plan(plan,plan_name)
 
-    def build_courses_graph(self, major_name):
+    def build_courses_graph(self, major_name,checkout=[]):
         g=lnkGraph.lnkGraph()
         cursor = self.cur.execute('''select * from 计算机 as c
                                         where not exists (select p.courseID from  计算机_prerequisites as p 
@@ -316,6 +349,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                                         group by p.courseID);''')
         for row in cursor:
             # print(row)
+            if row[0] in checkout:
+                continue
             c = course.course(row[0], row[1], row[2], row[3], row[4], row[5])
             g.append_ver(c)
         cursor = self.cur.execute('''select p.courseID,count(*) as num,c.name,c.final,c.credit,c.department,c.compulsory 
@@ -326,6 +361,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         # print('again!!!')
         for row2 in cursor:
             # print(row2)
+            if row2[0] in checkout:
+                continue
             c = course.course(row2[0], row2[2], row2[3], row2[4], row2[5], row2[6])
             g.append_ver(c)
         # g.show_ver()
@@ -337,10 +374,10 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             after_index = g.find_ver_by_ID(courseID)
             pre_index = g.find_ver_by_ID(preID)
 
-            if pre_index and after_index:  # out degree (pre_index course) in link
+            if pre_index!=-1 and after_index!=-1:  # out degree (pre_index course) in link
                 # g.graph[pre_index].append(after_index)
                 g.add_edge(pre_index, after_index)
-        self.current_course_graph=g
+        return g
 
     def create_config(self):
         if not os.path.exists(working_dir+'/models/config.json'):

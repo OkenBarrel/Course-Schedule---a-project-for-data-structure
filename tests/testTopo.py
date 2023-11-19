@@ -9,8 +9,8 @@ class test_topoSort(unittest.TestCase):
     def setUp(self) -> None:
         self.g = lnkGraph.lnkGraph()
 
-        db, cur = utils.DB.connect_db("../models/test.db")
-        cursor = cur.execute('''select * from 计算机 as c
+        self.db, self.cur = utils.DB.connect_db("../models/test.db")
+        cursor = self.cur.execute('''select * from 计算机 as c
                                         where not exists (select p.courseID from  计算机_prerequisites as p 
                                         where c.courseId=p.courseID 
                                         group by p.courseID);''')
@@ -18,7 +18,7 @@ class test_topoSort(unittest.TestCase):
             # print(row)
             c = course.course(row[0], row[1], row[2], row[3], row[4], row[5])
             self.g.append_ver(c)
-        cursor = cur.execute('''select p.courseID,count(*) as num,c.name,c.final,c.credit,c.department,c.compulsory 
+        cursor = self.cur.execute('''select p.courseID,count(*) as num,c.name,c.final,c.credit,c.department,c.compulsory 
                                     from 计算机_prerequisites as p,计算机 as c 
                                     where c.courseId=p.courseID 
                                     group by p.courseID 
@@ -29,7 +29,7 @@ class test_topoSort(unittest.TestCase):
             c = course.course(row2[0], row2[2], row2[3], row2[4], row2[5], row2[6])
             self.g.append_ver(c)
         # print(g.indegree)
-        cursor = cur.execute('select * from 计算机_prerequisites;')
+        cursor = self.cur.execute('select * from 计算机_prerequisites;')
         for row in cursor:
             courseID = row[0]
             preID = row[1]
@@ -41,9 +41,32 @@ class test_topoSort(unittest.TestCase):
                 # g.graph[pre_index].append(after_index)
                 self.g.add_edge(pre_index, after_index)
         # self.g.show_ver()
-        DB.close_db(db,cur)
+        # print(self.g.indegree)
+        # DB.close_db(db,cur)
         return
 
+    def test_graph_find_all_after(self):
+        res=[1]
+        res+=self.g.find_all_after(1)
+        n=lnkGraph.lnkGraph()
+        for num in res:
+            lnk=self.g.graph[num]
+            n.append_ver(lnk.head.ele)
+        cursor = self.cur.execute('select * from 计算机_prerequisites;')
+        for row in cursor:
+            courseID = row[0]
+            preID = row[1]
+            # print(row[0]+" "+row[1])
+            after_index = n.find_ver_by_ID(courseID)
+            pre_index = n.find_ver_by_ID(preID)
+            if pre_index!=-1 and after_index!=-1:  # out degree (pre_index course) in link
+                # g.graph[pre_index].append(after_index)
+                n.add_edge(pre_index, after_index)
+        n.show_ver()
+        print(n.indegree)
+        res2=self.g.find_next_after(1)
+        print(res)
+        print(res2)
 
     def test_topoSort_with_courses_graph_with_no_custom_setting(self):
 

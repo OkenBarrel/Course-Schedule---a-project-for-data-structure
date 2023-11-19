@@ -16,6 +16,10 @@ class lnkGraph:
         self.graph.append(link)
         self.size+=1
         self.indegree.append(0)
+    # def append_link(self,lnk):
+    #     self.graph.append(lnk)
+    #     self.size+=1
+    #     self.
 
     def is_empty(self):
         return self.size==0
@@ -33,13 +37,55 @@ class lnkGraph:
         for e in range(l):
             if self.graph[e].head.ele.courseID==id:
                 return e
-        return False
+        return -1
+    def find_next_after(self,num):
+        course_node = self.graph[num]
+        res=[]
+        if course_node.size==1:
+            return []
+        n=course_node.head.next
+        while n:
+            # pre_list.append(n.ele)
+            res.append(n.ele)
+            n = n.next
+        return res
+
+    def find_all_after(self,num):
+        course_node=self.graph[num]
+        pre_list=[]
+        res=[]
+        if course_node.size==1:
+            # print("No need to find")
+            return []
+        n=course_node.head.next
+        while n:
+            # pre_list.append(n.ele)
+            res.append(n.ele)
+            res+=self.find_all_after(n.ele)
+            n = n.next
+        # while len(pre_list):
+        #     course_index=pre_list.pop()
+        #     if self.graph[course_index].size==1:
+        #         continue
+        #     n=self.graph[course_index].head.next
+        #     while n:
+        #         res.append(n.ele)
+        #         pre_list.append(n.ele)
+        #         n=n.next
+        return res
 
     def find_ver_by_name(self,name):
         l=len(self.graph)
         for e in range(l):
             if self.graph[e].head.ele.name==name:
                 return self.graph[e].head.ele
+        return False
+
+    def find_ver_num_by_name(self,name):
+        l=len(self.graph)
+        for e in range(l):
+            if self.graph[e].head.ele.name==name:
+                return e
         return False
 
     def show_ver(self):

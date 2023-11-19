@@ -48,11 +48,13 @@ class DragWidget(QWidget):
         while type(old_item)!=QWidget:
             old_item =old_item.parent()
         check=old_item.layout().itemAt(0).widget()
+        name=old_item.layout().itemAt(2).widget().text()
+        name=name.replace("\n",'')
         credit=check.checkState()==2 and float(old_item.layout().itemAt(1).widget().text()) or 0
         # print(credit)
         target_index =self.layout.indexOf(target_item)
         self.layout.insertWidget(target_index ,old_item)
-        sig={"credit":credit,"source_term":source_drag_widget.parent().title()[-1]}
+        sig={"credit":credit,"source_term":source_drag_widget.parent().title()[-1],'name':name}
         self.drop.emit(sig)
 
     def dragEnterEvent(self, e: QDragEnterEvent) -> None:
