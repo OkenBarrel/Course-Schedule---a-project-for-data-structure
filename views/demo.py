@@ -108,10 +108,11 @@ class Ui_MainWindow(QMainWindow):
         return self.input_popup(title,prompt,item_list,'item')
 
     # TODO display_plan: compulsory courses should be in better style
-    def display_plan(self,plan:list,tab_name:str,chosen=False):
-        new_tab=QScrollArea()
-        self.tabArea.addTab(new_tab,tab_name)
-        self.tabArea.setCurrentWidget(new_tab)
+    def display_plan(self,plan:list,tab_name:str,chosen=False,repaint=False):
+        if not repaint:
+            new_tab=QScrollArea()
+            self.tabArea.addTab(new_tab,tab_name)
+            self.tabArea.setCurrentWidget(new_tab)
         wgt=QWidget()
         cnt_term=1
         wgt_layout=QHBoxLayout()

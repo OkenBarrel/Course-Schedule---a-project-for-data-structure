@@ -23,5 +23,5 @@ config={
 di={'what':2,'the':2,'fuck':2}
 # print('what' in di)
 s='012345678'
-print(s[3:5])
+print(1 or False)
 # print(li)

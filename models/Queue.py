@@ -10,6 +10,14 @@ class Queue:
     def is_empty(self):
         return self.size==0
 
+    def is_in(self,e):
+        p=self.head
+        while p:
+            if p.ele==e:
+                return True
+            p=p.next
+        return False
+
     def dequeue(self):
         if self.is_empty():
             print("nothing to dequeue")
@@ -19,12 +27,12 @@ class Queue:
         self.size-=1
         return res
 
-    def get_frot(self):
-        if self.is_empty():
-            print("nothing to dequeue")
-            return
-        res = self.head.ele
-        return res
+    # def get_front(self):
+    #     if self.is_empty():
+    #         print("nothing to dequeue")
+    #         return
+    #     res = self.head.ele
+    #     return res
 
     # def append(self,ele):
     #     if self.is_empty():

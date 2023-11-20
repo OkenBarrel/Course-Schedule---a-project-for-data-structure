@@ -224,7 +224,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         to_gb=wgt.layout().itemAt(to_index).widget()
         course_node_num=self.current_course_graph.find_ver_num_by_name(course_name)
         afters_num = [course_node_num]
-        afters_num += self.current_course_graph.find_all_after(course_node_num)
+        afters_num += self.current_course_graph.find_all_after(course_node_num,afters_num)
         if len(afters_num)>1 and to_index>from_index:
             print("topo again")
             print('working major: '+self.working_major)
@@ -236,14 +236,17 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             self.current_course_graph.show_ver()
             plan=topoSort(self.current_course_graph,afters_num,to_index)
             print(self.current_course_graph.indegree)
-            length = len(plan)
-            for term in range(length):
-                print('term' + str(term + 1))
-                for c in plan[term]:
-                    print(c)
-            tab_index=self.tabArea.currentIndex()
-            tab_name=self.tabArea.tabText(tab_index)
-            self.display_plan(plan,tab_name)
+            if plan:
+                length = len(plan)
+                for term in range(length):
+                    print('term' + str(term + 1))
+                    for c in plan[term]:
+                        print(c)
+                tab_index=self.tabArea.currentIndex()
+                tab_name=self.tabArea.tabText(tab_index)
+                self.display_plan(plan,tab_name,repaint=True)
+            else:
+                return
 
             # n=lnkGraph.lnkGraph()
             # afters=[course_node_num]
@@ -350,6 +353,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         if combo_index!=-1:
             self.open_combo.emit(combo_index)
             return
+
         self.current_course_graph=self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
         self.working_major=major_name

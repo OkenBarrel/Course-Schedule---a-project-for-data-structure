@@ -46,8 +46,8 @@ class test_topoSort(unittest.TestCase):
         return
 
     def test_graph_find_all_after(self):
-        res=[1]
-        res+=self.g.find_all_after(1)
+        res=[3]
+        res+=self.g.find_all_after(3,res)
         n=lnkGraph.lnkGraph()
         for num in res:
             lnk=self.g.graph[num]
@@ -64,10 +64,10 @@ class test_topoSort(unittest.TestCase):
                 n.add_edge(pre_index, after_index)
         # n.show_ver()
         print(n.indegree)
-        res2=self.g.find_next_after(1)
+        # res2=self.g.find_next_after(24)
         print(res)
         print(self.g.indegree)
-        plan=topoSort.topoSort(self.g,res,2)
+        plan=topoSort.topoSort(self.g,res,3)
         length = len(plan)
         for term in range(length):
             print('term'+str(term+1))

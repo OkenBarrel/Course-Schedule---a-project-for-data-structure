@@ -5,6 +5,7 @@ UNVISITED=0
 VISITED=1
 
 
+# TODO 查bug！
 def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit=0):
     l=len(lnkGraph.graph)
     res=[]
@@ -14,17 +15,30 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit=0):
     next=Queue()
     temp=[]
     credit=0
+    change=len(need_change)
+
     for e in range(l):
         if indegree[e]==0:
             in0.push(e)
     while not in0.is_empty() or not next.is_empty():
+        if change:
+            bl=True
+            for index,a in enumerate(indegree):
+                if index not in need_change:
+                    bl=bl and visited[index] and visited[need_change[0]]==0
+            if bl:
+                print("the plan can't be made!!")
+                return False
         while not in0.is_empty():
             ver = in0.dequeue()
-            if ver in need_change and len(res)<=limit:
-                next.push(ver)
-                continue
             course = lnkGraph.graph[ver].head.ele
             node = lnkGraph.graph[ver].head.next
+            # if ver==need_change[0] and len(res)==limit:
+            #     temp.append(course)
+            if ver in need_change and len(res)<limit:
+                if not next.is_in(ver):
+                    next.push(ver)
+                continue
             if course.compulsory:
                 credit += float(course.credit)
             if credit <= 17.5:
@@ -42,29 +56,31 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit=0):
                 node = node.next
         no = []
         for c in temp:
-            if c.name == "大学物理Ⅰ-2":
-                print("yes")
             num = lnkGraph.find_ver_num_by_name(c.name)
             af = lnkGraph.find_next_after(num)
             no += af
         later=[]
         while not next.is_empty():
-            ver=next.dequeue()
-            if ver in no:
-                later.append(ver)
+            v=next.dequeue()
+            if v in no:
+                later.append(v)
                 continue
-            if ver in need_change and len(res)<limit-1:
-                later.append(ver)
-            in0.push(ver)
+            if v in need_change and len(res)<limit:
+                later.append(v)
+                continue
+            if not in0.is_in(v):
+                in0.push(v)
         for e in later:
-            next.push(e)
+            if not next.is_in(e):
+                next.push(e)
         if in0.is_empty() and not next.is_empty():
             if len(temp)!=0:
                 res.append(temp)
                 temp=[]
                 credit=0
             t=next.dequeue()
-            in0.push(t)
+            if not in0.is_in(t):
+                in0.push(t)
 
     res.append(temp)
     # while not next.is_empty() or not in0.is_empty():
