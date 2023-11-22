@@ -6,7 +6,7 @@ VISITED=1
 
 
 # TODO 查bug！
-def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit=0):
+def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit=17.5):
     l=len(lnkGraph.graph)
     res=[]
     visited=[UNVISITED]*l
@@ -35,13 +35,13 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit=0):
             node = lnkGraph.graph[ver].head.next
             # if ver==need_change[0] and len(res)==limit:
             #     temp.append(course)
-            if ver in need_change and len(res)<limit:
+            if ver in need_change and len(res)<limit_term:
                 if not next.is_in(ver):
                     next.push(ver)
                 continue
             if course.compulsory:
                 credit += float(course.credit)
-            if credit <= 17.5:
+            if credit <= limit_credit:
                 temp.append(course)
             else:
                 res.append(temp)
@@ -65,7 +65,7 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit=0):
             if v in no:
                 later.append(v)
                 continue
-            if v in need_change and len(res)<limit:
+            if v in need_change and len(res)<limit_term:
                 later.append(v)
                 continue
             if not in0.is_in(v):
@@ -81,91 +81,9 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit=0):
             t=next.dequeue()
             if not in0.is_in(t):
                 in0.push(t)
-
     res.append(temp)
-    # while not next.is_empty() or not in0.is_empty():
-    #     no = []
-    #     for c in temp:
-    #         if c.name == "大学物理Ⅰ-2":
-    #             print("yes")
-    #         num = lnkGraph.find_ver_num_by_name(c.name)
-    #         af = lnkGraph.find_next_after(num)
-    #         no += af
-    #     no2 = [lnkGraph.graph[n].head.ele.courseID for n in no]
-    #     while not next.is_empty():
-    #         ver=next.dequeue()
-    #         course = lnkGraph.graph[ver].head.ele
-    #         if course.courseID in no2:
-    #             in0.push(ver)
-    #             continue
-    #         node = lnkGraph.graph[ver].head.next
-    #         if course.name=='大学物理Ⅰ-2':
-    #             print('dawu')
-    #         if course.compulsory:
-    #             credit += float(course.credit)
-    #         else:
-    #             credit += float(course.credit) / 2
-    #         if credit <= 17.5:
-    #             temp.append(course)
-    #         else:
-    #             res.append(temp)
-    #             temp = [course]
-    #             credit = float(course.credit)
-    #         # lnkGraph.del_ver(ver)
-    #         visited[ver] = VISITED
-    #         while node:
-    #             indegree[node.ele] -= 1
-    #
-    #             if ver not in temp and indegree[node.ele]==0:
-    #                 in0.push(node.ele)
-    #             node = node.next
-    #         # in0.push(node.ele)
-    #     no = []
-    #     for c in temp:
-    #         if c.name == "大学物理Ⅰ-2":
-    #             print("yes")
-    #         num = lnkGraph.find_ver_num_by_name(c.name)
-    #         af = lnkGraph.find_next_after(num)
-    #         no += af
-    #     no2 = [lnkGraph.graph[n].head.ele.courseID for n in no]
-    #     while not in0.is_empty():
-    #         ver=in0.dequeue()
-    #         # no=[]
-    #         course = lnkGraph.graph[ver].head.ele
-    #         # for c in temp:
-    #         #     if c.name=="大学物理Ⅰ-2":
-    #         #         print("yes")
-    #         #     num=lnkGraph.find_ver_num_by_name(c.name)
-    #         #     no+=lnkGraph.find_next_after(num)
-    #         # no2=[lnkGraph.graph[num].head.ele.courseID for num in no]
-    #         if course.courseID in no2:
-    #             next.push(ver)
-    #             continue
-    #
-    #         node=lnkGraph.graph[ver].head.next
-    #         if course.name=='大学物理Ⅰ-2':
-    #             print('dawu')
-    #         if course.compulsory:
-    #             credit += float(course.credit)
-    #         else:
-    #             credit += float(course.credit) / 2
-    #         if credit <= 17.5:
-    #             temp.append(course)
-    #         else:
-    #             res.append(temp)
-    #             temp = [course]
-    #             credit = float(course.credit)
-    #         # lnkGraph.del_ver(ver)
-    #         visited[ver] = VISITED
-    #         while node:
-    #             name=lnkGraph.graph[node.ele].head.ele.name
-    #             indegree[node.ele]-=1
-    #             if ver not in temp and indegree[node.ele]==0:
-    #                 next.push(node.ele)
-    #             node=node.next
-    #             # indegree[ver]=-1
-    #         # lnkGraph.graph[ver].show()
     for ind in visited:
         if ind==UNVISITED:
             print("Error!!!")
+            return False
     return res

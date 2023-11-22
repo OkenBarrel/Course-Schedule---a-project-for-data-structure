@@ -14,6 +14,18 @@ class DragWidget(QWidget):
 
     def addWidget(self ,widget):
         self.layout.addWidget(widget)
+        return
+
+    def insertWidget(self,index,item):
+        self.layout.insertWidget(index, item)
+        return
+
+    def takeAt(self,index):
+        wgt=self.layout.takeAt(index)
+        return wgt
+
+    def getSize(self):
+        return self.size
 
     def mousePressEvent(self ,e):
         print(e)
@@ -44,7 +56,7 @@ class DragWidget(QWidget):
             target_item= target_item.parent()
         source_index =int(source_drag_widget.drag.mimeData().text())
         print(source_index)
-        old_item = source_drag_widget.layout.takeAt(source_index).widget()
+        old_item = source_drag_widget.takeAt(source_index).widget()
         while type(old_item)!=QWidget:
             old_item =old_item.parent()
         check=old_item.layout().itemAt(0).widget()
@@ -53,7 +65,7 @@ class DragWidget(QWidget):
         credit=check.checkState()==2 and float(old_item.layout().itemAt(1).widget().text()) or 0
         # print(credit)
         target_index =self.layout.indexOf(target_item)
-        self.layout.insertWidget(target_index ,old_item)
+        self.insertWidget(target_index ,old_item)
         sig={"credit":credit,"source_term":source_drag_widget.parent().title()[-1],'name':name}
         self.drop.emit(sig)
 

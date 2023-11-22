@@ -1,7 +1,7 @@
 import os,sys
 from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import pyqtSignal,Qt,QCoreApplication
-from PyQt5.QtWidgets import QGridLayout,QFrame,QLabel,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,\
+from PyQt5.QtWidgets import QFormLayout,QFrame,QLabel,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,\
                             QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,\
                             QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
@@ -25,23 +25,27 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.resize(1200,800)
         # MainWindow.setFixedSize(1200,800)
 
-        self.yes_butt=QPushButton("yes")
+        self.yes_butt=QPushButton("保存计划")
+        self.label1=QLabel("每学期最大修读学分：")
+        self.credit_limit=QLineEdit()
+        self.credit_limit.setPlaceholderText('17.5')
         self.no_butt = QPushButton("no")
-        # self.major_lable=QLabel('none yet')
 
         self.dock=QDockWidget("settings")
-        self.dragTest = DragWidget(self.dock)
+        # self.dragTest = DragWidget(self.dock)
         # self.dragTest.addWidget(self.yes_butt)
         l=QVBoxLayout()
+        form=QFormLayout()
+        # TODO !!
+        # form.addWidget(self.label1)
         l.addWidget(QGroupBox("test4Drag"))
-        self.dragTest.setLayout(l)
         wgt=QWidget()
         dock_layout=QVBoxLayout()
         dock_layout.addWidget(self.yes_butt)
-        dock_layout.addWidget(self.dragTest)
         dock_layout.addWidget(self.no_butt)
         wgt.setStyleSheet("""
-            .QWidget {background:#545d64;}    
+            .QWidget {background:#545d64;}
+            .QPushButton {background:#545d64;}
         """)
         wgt.setLayout(dock_layout)
         self.dock.setWidget(wgt)

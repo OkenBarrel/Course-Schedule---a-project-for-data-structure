@@ -74,6 +74,10 @@ class test_topoSort(unittest.TestCase):
             for c in plan[term]:
                 print(c)
 
+    def test_find_all_pre(self):
+        res=self.g.find_all_pre(18)
+        print(res)
+
     def test_topoSort_with_courses_graph_with_no_custom_setting(self):
 
         res=topoSort.topoSort(self.g)

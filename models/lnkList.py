@@ -18,6 +18,14 @@ class lnkList:
     def size(self):
         return self.size
 
+    def is_in(self,item):
+        p=self.head
+        while p:
+            if p.ele==item:
+                return True
+            p=p.next
+        return False
+
     def is_empty(self):
         return self.head is None
     def link_is_empty(self):

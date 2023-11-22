@@ -220,6 +220,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         to_index=target_term-1
         course_name=sig['name']
         wgt = self.tabArea.currentWidget().widget()
+        wgt_layout=wgt.layout()
         from_gb=wgt.layout().itemAt(from_index).widget()
         to_gb=wgt.layout().itemAt(to_index).widget()
         course_node_num=self.current_course_graph.find_ver_num_by_name(course_name)
@@ -229,7 +230,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             print("topo again")
             print('working major: '+self.working_major)
             wgt = self.tabArea.currentWidget().widget()
-            # plan=self.get_plan_from_widget(wgt,self.working_major)
             limit=to_index
             print(afters_num)
             print(to_index)
@@ -247,44 +247,79 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 self.display_plan(plan,tab_name,repaint=True)
             else:
                 return
+        # elif to_index<from_index:
+        #     pres=self.current_course_graph.find_all_pre(course_node_num)
+        #     plan=self.get_plan_from_widget(wgt,self.working_major)
+        #     max_move=to_index
+        #     copied=plan[:]
+        #     for index in range(from_index-1,-1,-1):
+        #         for ind,c in enumerate(copied[index]):
+        #             course_num=self.current_course_graph.find_ver_by_ID(c[0])
+        #             # if course_num in pres and index>=to_index:
+        #             #     this_gb=wgt_layout.itemAt(index).widget()
+        #             #     drag_wgt=this_gb.layout().itemAt(1).widget()
+        #             #     unit=drag_wgt.layout.itemAt(ind).widget()
+        #             #     pace=to_index-from_index+index
+        #             #     if pace<0:
+        #             #         print("you cant!!!")
+        #             #         unit.setStyleSheet('''.QWidget{background:red;}''')
+        #             #         continue
+        #             #     max_move=min(max_move,pace)
+        #             #     that_gb=wgt_layout.itemAt(pace).widget()
+        #             #     that_drag=that_gb.layout().itemAt(1).widget()
+        #             #     that_drag.addWidget(unit)
+        #             #     self.update_credit(index)
+        #             #     self.update_credit(pace)
+        #             #     pres.remove(course_num)
+        #             # el
+        #             if course_num in pres and index>=max_move:
+        #                 this_gb = wgt_layout.itemAt(index).widget()
+        #                 drag_wgt = this_gb.layout().itemAt(1).widget()
+        #                 unit = drag_wgt.layout.itemAt(ind).widget()
+        #                 pace_1=max_move-1
+        #                 print("pace is: "+str(pace_1))
+        #                 if pace_1<0:
+        #                     print("you cant!!!")
+        #                     unit.setStyleSheet('''.QWidget{background:red;}''')
+        #                     continue
+        #                 max_move = min(max_move, pace_1)
+        #                 unit = drag_wgt.layout.takeAt(ind).widget()
+        #                 that_gb = wgt_layout.itemAt(pace_1).widget()
+        #                 that_drag = that_gb.layout().itemAt(1).widget()
+        #                 that_drag.addWidget(unit)
+        #                 pres.remove(course_num)
+        #                 self.update_credit(index)
+        #                 self.update_credit(pace_1)
+        self.update_credit(from_index)
+        self.update_credit(to_index)
+        if sig['credit']!=0:
+            self.update_credit(from_index)
+            self.update_credit(to_index)
 
-            # n=lnkGraph.lnkGraph()
-            # afters=[course_node_num]
-            # checkout=[]
-            # afters+=self.current_course_graph.find_all_after(course_node_num)
-            # for num in afters:
-            #     n.append_ver(self.current_course_graph.graph[num].head.ele)
-            # cursor = self.cur.execute('select * from 计算机_prerequisites;')
-            # for row in cursor:
-            #     courseID = row[0]
-            #     preID = row[1]
-            #     # print(row[0]+" "+row[1])
-            #     after_index = n.find_ver_by_ID(courseID)
-            #     pre_index = n.find_ver_by_ID(preID)
-            #     if pre_index!=-1 and after_index!=-1:  # out degree (pre_index course) in link
-            #         # g.graph[pre_index].append(after_index)
-            #         if courseID not in checkout:
-            #             checkout.append(checkout)
-            #         if preID not in checkout:
-            #             checkout.append(preID)
-            #         n.add_edge(pre_index, after_index)
-            # n.show_ver()
-            # rest_graph=self.build_courses_graph(self.working_major,checkout)
-            # plan=topoSort(n)
-            # final_plan=topoSort(rest_graph,plan)
+    def update_credit(self,index:int):
+        wgt = self.tabArea.currentWidget().widget()
+        wgt_layout = wgt.layout()
+        sum=0
+        target_gb=wgt_layout.itemAt(index).widget()
+        credit_label=target_gb.layout().itemAt(0).widget()
+        drag=target_gb.layout().itemAt(1).widget()
+        drag_layout=drag.layout
+        s=drag.layout.count()
 
+        for i in range(s):
+            unit=drag_layout.itemAt(i).widget()
+            cre=unit.layout().itemAt(1).widget()
+            check=unit.layout().itemAt(0).widget()
+            print(str(check.checkState()))
+            if check.checkState():
+                print("adding"+cre.text())
+                sum+=float(cre.text())
 
-        # if sig['credit']!=0:
-        #     from_credit_label=from_gb.layout().itemAt(0).widget()
-        #     to_credit_label=to_gb.layout().itemAt(0).widget()
-        #     print(from_credit_label.text()[5:])
-        #     print(to_credit_label.text()[5:])
-        #     from_credit=float(from_credit_label.text()[5:])-sig['credit']
-        #     to_credit=float(to_credit_label.text()[5:])+sig['credit']
-        #     from_credit_label.setText('已选学分 '+str(from_credit))
-        #     to_credit_label.setText('已选学分 '+str(to_credit))
+        if sum==float(credit_label.text()[5:]):
+            return
+        credit_label.setText('已选学分 '+str(sum))
+        return
 
-        # wgt.layout().item
 
     def import_courses(self,pdf_path):
 

@@ -16,11 +16,18 @@ class lnkGraph:
         self.graph.append(link)
         self.size+=1
         self.indegree.append(0)
-    # TODO 
-    def find_all_pre(self,ver):
-        for lnk in self.graph:
-        pass
 
+    # TODO
+    def find_all_pre(self,ver):
+        res=[]
+        temp=[]
+        cnt=0
+        for lnk in self.graph:
+            if lnk.is_in(ver) and ver not in res:
+                res.append(cnt)
+                res+=self.find_all_pre(cnt)
+            cnt+=1
+        return res
 
     def is_empty(self):
         return self.size==0
