@@ -8,5 +8,7 @@ class course:
         self.department=department
         self.compulsory=compulsory
 
+    # def __eq__(self, other):
+    #     return other.name==self.name and other.courseID==self.courseID
     def __str__(self):
         return "ID:{} name:{} credit:{} department:{} compulsory:{}".format(self.courseID,self.name,self.credit,self.department,self.compulsory==1)

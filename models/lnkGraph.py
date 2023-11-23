@@ -88,6 +88,7 @@ class lnkGraph:
         for e in range(l):
             if self.graph[e].head.ele.name==name:
                 return self.graph[e].head.ele
+        print("error "+name)
         return False
 
     def find_ver_num_by_name(self,name):

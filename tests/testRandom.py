@@ -23,5 +23,7 @@ config={
 di={'what':2,'the':2,'fuck':2}
 # print('what' in di)
 s='012345678'
-print(1 or False)
+li=[[1,1,1],[1,1],[1]]
+li=[sum(x) for x in li]
+print(list(li))
 # print(li)

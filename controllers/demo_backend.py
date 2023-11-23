@@ -139,6 +139,24 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 self.working_major=p['major']
                 return
 
+    def get_course_plan(self,widget:QWidget):
+        plan=[]
+        for child in widget.findChildren(QGroupBox):
+            temp=[]
+            drag_widget=child.findChild(DragWidget)
+            cnt=drag_widget.layout.count()
+            for w in range(cnt):
+                wgt=drag_widget.layout.itemAt(w).widget()
+                wgt_layout=wgt.layout()
+                check=wgt_layout.itemAt(0).widget()
+                credit_label = wgt_layout.itemAt(1).widget()
+                name_label=wgt_layout.itemAt(2).widget()
+                name=name_label.text().replace('\n','')
+                course=self.current_course_graph.find_ver_by_name(name)
+                # id = DB.get_courseID(name, self.cur, major_name)
+                temp.append(course)
+            plan.append(temp)
+        return plan
     def combo_activated_triggered(self, index):
         combo=self.toolbar.findChild(QComboBox)
         plan_name=combo.itemText(index)
@@ -224,74 +242,24 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         from_gb=wgt.layout().itemAt(from_index).widget()
         to_gb=wgt.layout().itemAt(to_index).widget()
         course_node_num=self.current_course_graph.find_ver_num_by_name(course_name)
-        afters_num = [course_node_num]
-        afters_num += self.current_course_graph.find_all_after(course_node_num,afters_num)
-        if len(afters_num)>1 and to_index>from_index:
-            print("topo again")
-            print('working major: '+self.working_major)
-            wgt = self.tabArea.currentWidget().widget()
-            limit=to_index
-            print(afters_num)
-            print(to_index)
-            self.current_course_graph.show_ver()
-            plan=topoSort(self.current_course_graph,afters_num,to_index)
-            print(self.current_course_graph.indegree)
-            if plan:
-                length = len(plan)
-                for term in range(length):
-                    print('term' + str(term + 1))
-                    for c in plan[term]:
-                        print(c)
-                tab_index=self.tabArea.currentIndex()
-                tab_name=self.tabArea.tabText(tab_index)
-                self.display_plan(plan,tab_name,repaint=True)
-            else:
-                return
-        # elif to_index<from_index:
-        #     pres=self.current_course_graph.find_all_pre(course_node_num)
-        #     plan=self.get_plan_from_widget(wgt,self.working_major)
-        #     max_move=to_index
-        #     copied=plan[:]
-        #     for index in range(from_index-1,-1,-1):
-        #         for ind,c in enumerate(copied[index]):
-        #             course_num=self.current_course_graph.find_ver_by_ID(c[0])
-        #             # if course_num in pres and index>=to_index:
-        #             #     this_gb=wgt_layout.itemAt(index).widget()
-        #             #     drag_wgt=this_gb.layout().itemAt(1).widget()
-        #             #     unit=drag_wgt.layout.itemAt(ind).widget()
-        #             #     pace=to_index-from_index+index
-        #             #     if pace<0:
-        #             #         print("you cant!!!")
-        #             #         unit.setStyleSheet('''.QWidget{background:red;}''')
-        #             #         continue
-        #             #     max_move=min(max_move,pace)
-        #             #     that_gb=wgt_layout.itemAt(pace).widget()
-        #             #     that_drag=that_gb.layout().itemAt(1).widget()
-        #             #     that_drag.addWidget(unit)
-        #             #     self.update_credit(index)
-        #             #     self.update_credit(pace)
-        #             #     pres.remove(course_num)
-        #             # el
-        #             if course_num in pres and index>=max_move:
-        #                 this_gb = wgt_layout.itemAt(index).widget()
-        #                 drag_wgt = this_gb.layout().itemAt(1).widget()
-        #                 unit = drag_wgt.layout.itemAt(ind).widget()
-        #                 pace_1=max_move-1
-        #                 print("pace is: "+str(pace_1))
-        #                 if pace_1<0:
-        #                     print("you cant!!!")
-        #                     unit.setStyleSheet('''.QWidget{background:red;}''')
-        #                     continue
-        #                 max_move = min(max_move, pace_1)
-        #                 unit = drag_wgt.layout.takeAt(ind).widget()
-        #                 that_gb = wgt_layout.itemAt(pace_1).widget()
-        #                 that_drag = that_gb.layout().itemAt(1).widget()
-        #                 that_drag.addWidget(unit)
-        #                 pres.remove(course_num)
-        #                 self.update_credit(index)
-        #                 self.update_credit(pace_1)
-        self.update_credit(from_index)
-        self.update_credit(to_index)
+        if to_index>from_index:
+            mode='after'
+            need=[]
+            need+= self.current_course_graph.find_all_after(course_node_num,need)
+            need=[course_node_num]+list(set(need))
+        elif to_index<from_index:
+            mode='before'
+            need=[]
+            need +=self.current_course_graph.find_all_pre(course_node_num)
+            need+=[course_node_num]
+        course_plan=self.get_course_plan(wgt)
+        plan=topoSort(self.current_course_graph,need_change=need,limit_term=to_index,base=course_plan,mode=mode)
+        if plan:
+            tab_index = self.tabArea.currentIndex()
+            tab_name = self.tabArea.tabText(tab_index)
+            self.display_plan(plan, tab_name, repaint=True)
+        else:
+            return
         if sig['credit']!=0:
             self.update_credit(from_index)
             self.update_credit(to_index)
@@ -319,7 +287,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             return
         credit_label.setText('已选学分 '+str(sum))
         return
-
 
     def import_courses(self,pdf_path):
 
