@@ -5,6 +5,16 @@ from utils import DB
 import unittest
 
 
+def print_plan(res):
+    length = len(res)
+    for term in range(length):
+        credit=0
+        print('term' + str(term + 1))
+        for c in res[term]:
+            credit+=float(c.credit)
+            print(c)
+        print(credit)
+
 class test_topoSort(unittest.TestCase):
     def setUp(self) -> None:
         self.g = lnkGraph.lnkGraph()
@@ -76,6 +86,19 @@ class test_topoSort(unittest.TestCase):
             print('term'+str(term+1))
             for c in plan[term]:
                 print(c)
+    def test_is_topo(self,plan):
+        term=len(plan)
+        check=[]
+        no=[]
+        for t in range(term-1,-1,-1):
+            for course in plan[t]:
+                num=self.g.find_ver_num_by_name(course.name)
+                no+=list(set(self.g.find_all_pre(num)))
+                for ind in range(t,term):
+                    check+=[c for c in plan[ind] if c in no]
+                if check:
+                    return False
+        return True
 
     def test_find_all_pre(self):
         res=self.g.find_all_pre(18)
@@ -90,13 +113,21 @@ class test_topoSort(unittest.TestCase):
         #         print(c)
 
     def test_topoSort_with_courses_graph_with_no_custom_setting(self):
-
         res=topoSort.topoSort(self.g)
         length = len(res)
         for term in range(length):
             print('term'+str(term+1))
             for c in res[term]:
                 print(c)
+    def test_topo_with_limited_credit(self):
+        res=topoSort.topoSort(self.g)
+        print("before!!!")
+        print_plan(res)
+        plan=topoSort.topoSort(self.g,limit_credit=15,base=res)
+        print('after!!!')
+        print_plan(plan)
+        print(self.test_is_topo(res))
+
 
 if __name__=='__main__':
     unittest.main()

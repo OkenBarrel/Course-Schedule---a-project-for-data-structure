@@ -26,23 +26,21 @@ class Ui_MainWindow(QMainWindow):
         # MainWindow.setFixedSize(1200,800)
 
         self.yes_butt=QPushButton("保存计划")
-        self.label1=QLabel("每学期最大修读学分：")
         self.credit_limit=QLineEdit()
-        self.credit_limit.setPlaceholderText('17.5')
-        self.no_butt = QPushButton("no")
+        self.credit_limit.setFixedWidth(120)
+        self.credit_limit.setPlaceholderText('default: 17.5')
+        self.no_butt = QPushButton("再次排序")
 
         self.dock=QDockWidget("settings")
-        # self.dragTest = DragWidget(self.dock)
-        # self.dragTest.addWidget(self.yes_butt)
-        l=QVBoxLayout()
         form=QFormLayout()
         # TODO !!
-        # form.addWidget(self.label1)
-        l.addWidget(QGroupBox("test4Drag"))
+        form.addRow("学期最大\n修读学分",self.credit_limit)
         wgt=QWidget()
         dock_layout=QVBoxLayout()
         dock_layout.addWidget(self.yes_butt)
         dock_layout.addWidget(self.no_butt)
+        dock_layout.addLayout(form)
+
         wgt.setStyleSheet("""
             .QWidget {background:#545d64;}
             .QPushButton {background:#545d64;}
@@ -112,7 +110,7 @@ class Ui_MainWindow(QMainWindow):
         return self.input_popup(title,prompt,item_list,'item')
 
     # TODO display_plan: compulsory courses should be in better style
-    def display_plan(self,plan:list,tab_name:str,chosen=False,repaint=False):
+    def display_plan(self,plan:list,tab_name:str,chosen=False,repaint=False,chosen_list=[]):
         if not repaint:
             new_tab=QScrollArea()
             self.tabArea.addTab(new_tab,tab_name)
@@ -138,28 +136,30 @@ class Ui_MainWindow(QMainWindow):
                 inner_layout=QHBoxLayout()
 
                 check=QCheckBox(parent=inner_wgt)
+                if el.name in chosen_list:
+                    check.setChecked(True)
                 inner_layout.addWidget(check)
                 credit_label = QLabel(parent=inner_wgt)
                 name_label = QLabel(parent=inner_wgt)
-                if chosen:
-                    course = el[0]
-                    wrapped_word=formatting.word_wrap(course.name,195,QFontMetricsF(check.font()).width("新"))
-                    credit_text=course.credit
-                    is_chosen = el[1]
-                    if course.compulsory:
-                        inner_wgt.setStyleSheet('''.QLabel{color:red;}''')
-                        check.setEnabled(False)
-                    if is_chosen:
-                        check.setChecked(True)
-                        credits += float(course.credit)
-                else:
-                    wrapped_word=formatting.word_wrap(el.name,195,QFontMetricsF(check.font()).width("新"))
-                    credit_text=el.credit
-                    if el.compulsory:
-                        inner_wgt.setStyleSheet('''.QLabel{color:red;}''')
-                        check.setChecked(True)
-                        check.setEnabled(False)
-                        credits += float(el.credit)
+                # if chosen:
+                #     course = el[0]
+                #     wrapped_word=formatting.word_wrap(course.name,195,QFontMetricsF(check.font()).width("新"))
+                #     credit_text=course.credit
+                #     is_chosen = el[1]
+                #     if course.compulsory:
+                #         inner_wgt.setStyleSheet('''.QLabel{color:red;}''')
+                #         check.setEnabled(False)
+                #     if is_chosen:
+                #         check.setChecked(True)
+                #         credits += float(course.credit)
+                # else:
+                wrapped_word=formatting.word_wrap(el.name,195,QFontMetricsF(check.font()).width("新"))
+                credit_text=el.credit
+                if el.compulsory:
+                    inner_wgt.setStyleSheet('''.QLabel{color:red;}''')
+                    # check.setChecked(True)
+                    check.setEnabled(False)
+                    credits += float(el.credit)
                 credit_label.setText(credit_text)
                 credit_label.setEnabled(False)
                 name_label.setText(wrapped_word)
@@ -168,7 +168,7 @@ class Ui_MainWindow(QMainWindow):
                 inner_layout.addWidget(name_label)
                 inner_wgt.setLayout(inner_layout)
                 drag_widget.addWidget(inner_wgt)
-                check.stateChanged.connect(partial(self.check_change,wrapped_word.replace('\n',''),cnt_term-1,credit_text))
+                check.stateChanged.connect(partial(self.checkbox_change, wrapped_word.replace('\n', ''), cnt_term - 1, credit_text))
             drag_widget.drop.connect(partial(self.drop, cnt_term - 1))
             show_credit.setText('已选学分 '+str(credits))
             gb_layout_out.addWidget(drag_widget)
@@ -181,7 +181,7 @@ class Ui_MainWindow(QMainWindow):
         print("done")
         return
 
-    def check_change(self,course_name,term,credit,state):
+    def checkbox_change(self, course_name, term, credit, state):
         pass
 
     def drop(self,target_term,credit):

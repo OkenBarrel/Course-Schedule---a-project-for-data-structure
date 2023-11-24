@@ -37,13 +37,15 @@ def check_table_empty(cur,table_name):
     return count==0
 
 
-def plan2DB(plan,con,cur,plan_id):
+def plan2DB(plan,con,cur,plan_id,chosen):
     cursor=con.cursor()
     course_list=[]
     l=len(plan)
     for i in range(l):
         for c in plan[i]:
-            course_list.append(tuple([plan_id, i + 1, c[0],c[1]]))
+
+            # course_list.append(tuple([plan_id, i + 1, c[0],c[1]]))
+            course_list.append(tuple([plan_id, i + 1, c.courseID,int(c.name in chosen)]))
     if not check_table_exist(cur,'plans'):
         cursor.execute('''
             create table plans(
@@ -76,15 +78,17 @@ def DB2plan(plan_id,cur,major_name):
                         join {} as major on plans.course_id=major.courseID and plans.plan_id={};'''.format(major_name,plan_id))
     print('in DB3plan now!!')
     temp=[]
+    chosen=[]
     for row in cursor:
         # print(row[0]+' '+row[1]+' '+row[3])
         c=course.course(row[0],row[1],row[2],row[3],row[4],row[5])
         if row[7]>len(plan)+1:
             plan.append(temp)
             temp=[]
-        temp.append(tuple([c,row[6],row[7]]))
+        temp.append(c)
+        if row[6]: chosen.append(c.name)
     plan.append(temp)
-    return plan
+    return plan,chosen
 
 
 def get_courseID(course_name,cur,major):

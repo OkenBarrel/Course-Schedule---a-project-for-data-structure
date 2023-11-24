@@ -10,7 +10,7 @@ from .DragWidget import DragWidget
 import json,os,sys,copy
 
 
-
+TERM_LIMITATION=17.5
 db_name='test.db'
 if getattr(sys, 'frozen', False):
     working_dir = os.path.dirname(sys.executable)
@@ -21,7 +21,7 @@ elif __file__:
 class MainWindow(demo.Ui_MainWindow,QMainWindow):
     db=None
     cur=None
-    unsaved_plan={}
+    working_plan={}
     current_course_graph=None
     working_major=None
     working_dir=None
@@ -43,39 +43,40 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     def _eventFilter(self):
         self.yes_butt.installEventFilter(self)
+        self.no_butt.installEventFilter(self)
 
-    def get_plan_from_widget(self,widget:QWidget,major_name):
-        plan=[]
-
-        for child in widget.findChildren(QGroupBox):
-            temp=[]
-            drag_widget=child.findChild(DragWidget)
-            cnt=drag_widget.layout.count()
-            for w in range(cnt):
-                wgt=drag_widget.layout.itemAt(w).widget()
-                wgt_layout=wgt.layout()
-                check=wgt_layout.itemAt(0).widget()
-                credit_label = wgt_layout.itemAt(1).widget()
-                name_label=wgt_layout.itemAt(2).widget()
-                name=name_label.text().replace('\n','')
-                id = DB.get_courseID(name, self.cur, major_name)
-                temp.append((id,check.checkState()))
-            # layout = child.layout().itemAt(1)
-            # row = layout.rowCount()
-            # for r in range(row):
-            #     check = layout.itemAtPosition(r, 0)
-            #     name_label = layout.itemAtPosition(r,2).widget()
-            #     print(type(name_label))
-            #     name=name_label.text().replace('\n','')
-            #     id = DB.get_courseID(name, self.cur, major_name)
-            #     temp.append((id,check.widget().checkState()))
-            # for grand in child.findChildren(QCheckBox):
-            #     name=grand.text().replace('\n','')
-            #     print(name)
-            #     id=DB.get_courseID(name.split(' ')[1],self.cur,major_name)
-            #     temp.append((id,grand.checkState()))
-            plan.append(temp)
-        return plan
+    # def get_plan_from_widget(self,widget:QWidget,major_name):
+    #     plan=[]
+    #
+    #     for child in widget.findChildren(QGroupBox):
+    #         temp=[]
+    #         drag_widget=child.findChild(DragWidget)
+    #         cnt=drag_widget.layout.count()
+    #         for w in range(cnt):
+    #             wgt=drag_widget.layout.itemAt(w).widget()
+    #             wgt_layout=wgt.layout()
+    #             check=wgt_layout.itemAt(0).widget()
+    #             credit_label = wgt_layout.itemAt(1).widget()
+    #             name_label=wgt_layout.itemAt(2).widget()
+    #             name=name_label.text().replace('\n','')
+    #             id = DB.get_courseID(name, self.cur, major_name)
+    #             temp.append((id,check.checkState()))
+    #         # layout = child.layout().itemAt(1)
+    #         # row = layout.rowCount()
+    #         # for r in range(row):
+    #         #     check = layout.itemAtPosition(r, 0)
+    #         #     name_label = layout.itemAtPosition(r,2).widget()
+    #         #     print(type(name_label))
+    #         #     name=name_label.text().replace('\n','')
+    #         #     id = DB.get_courseID(name, self.cur, major_name)
+    #         #     temp.append((id,check.widget().checkState()))
+    #         # for grand in child.findChildren(QCheckBox):
+    #         #     name=grand.text().replace('\n','')
+    #         #     print(name)
+    #         #     id=DB.get_courseID(name.split(' ')[1],self.cur,major_name)
+    #         #     temp.append((id,grand.checkState()))
+    #         plan.append(temp)
+    #     return plan
 
     def eventFilter(self,watched,event):
         if watched==self.yes_butt:
@@ -90,28 +91,44 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 if combo.findText(plan_name)==-1:
                     combo.addItem(plan_name)
                 plans_in_config=[p['name'] for p in self.config['plans']]
+                if self.credit_limit.text()=='':
+                    limitation=TERM_LIMITATION
+                else:
+                    limitation=float(self.credit_limit.text())
+                print('limitation: '+str(limitation))
                 if plan_name not in plans_in_config:
                     plan_id = self.config['global_id'] + 1
                     self.config['global_id'] += 1
                     self.config['plans'].append({
                         'id': plan_id,
                         'name': plan_name,
-                        'major':self.unsaved_plan[plan_name]
+                        'major':self.working_plan[plan_name]['major'],
+                        "credit_limit": limitation,
+                        "min_term_num": self.working_plan[plan_name]['min_term_num'],
+                        "limit_term_num": self.working_plan[plan_name]['limit_term_num']
                     })
-                    major_name=self.unsaved_plan[plan_name]
+                    major_name=self.working_plan[plan_name]['major']
 
                 for p in self.config['plans']:
                     if p['name']==plan_name:
                         plan_id=p['id']
                         major_name=p['major']
-                plan = self.get_plan_from_widget(wgt,major_name)
-                if DB.plan2DB(plan,self.db,self.cur,plan_id):
-                    print(self.unsaved_plan)
+                # plan = self.get_plan_from_widget(wgt,major_name)
+                plan,chosen=self.get_course_plan(wgt)
+                if DB.plan2DB(plan,self.db,self.cur,plan_id,chosen):
+                    print(self.working_plan)
                     # del self.unsaved_plan[plan_name]
                     return True
                 else:
                     return False
-
+        elif watched==self.no_butt:
+            # TODO 每学期修读时间可能不排序只计算学分和然后分到一起，然后检查是否符合？
+            if event.type() == QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
+                print("topo again!!")
+                wgt = self.tabArea.currentWidget().widget()
+                plan,chosen= self.get_course_plan(wgt)
+                limit_credit=float(self.credit_limit.text())
+                topoSort(self.current_course_graph,limit_credit=limit_credit)
         return False
     # without 'return False' the app will simply freeze
 
@@ -131,6 +148,12 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     #     print('combo '+str(index))
     def tab_changing(self,index):
         print('changing now!!!'+str(index))
+        plan_name=self.tabArea.tabText(index)
+        saved_plans=[x['name'] for x in self.config['plans']]
+        if plan_name in saved_plans:
+            plan_config=[x for x in self.config['plans'] if x['name']==plan_name][0]
+            if plan_config['credit_limit']!=TERM_LIMITATION:
+                self.credit_limit.setText(str(plan_config['credit_limit']))
         if len(self.config['majors'])<=1:
             return
         for p in self.config['plans']:
@@ -141,6 +164,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     def get_course_plan(self,widget:QWidget):
         plan=[]
+        chosen=[]
         for child in widget.findChildren(QGroupBox):
             temp=[]
             drag_widget=child.findChild(DragWidget)
@@ -149,14 +173,16 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 wgt=drag_widget.layout.itemAt(w).widget()
                 wgt_layout=wgt.layout()
                 check=wgt_layout.itemAt(0).widget()
-                credit_label = wgt_layout.itemAt(1).widget()
+                # credit_label = wgt_layout.itemAt(1).widget()
                 name_label=wgt_layout.itemAt(2).widget()
                 name=name_label.text().replace('\n','')
+                if check.checkState():
+                    chosen.append(name)
                 course=self.current_course_graph.find_ver_by_name(name)
                 # id = DB.get_courseID(name, self.cur, major_name)
                 temp.append(course)
             plan.append(temp)
-        return plan
+        return plan,chosen
     def combo_activated_triggered(self, index):
         combo=self.toolbar.findChild(QComboBox)
         plan_name=combo.itemText(index)
@@ -167,12 +193,13 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 major_name=p['major']
                 break
         self.working_major=major_name
-        plan=DB.DB2plan(plan_id,self.db,major_name)
+        plan,chosen=DB.DB2plan(plan_id,self.db,major_name)
         self.current_course_graph=self.build_courses_graph(major_name)
-        self.display_plan(plan,plan_name,True)
+
+        self.display_plan(plan,plan_name,chosen_list=chosen)
         return
 
-    def check_change(self,course_name,term,credit,state):
+    def checkbox_change(self, course_name, term, credit, state, limit=TERM_LIMITATION):
         print(course_name + ' at ' + str(term) + ' is now ' + str(state))
         # self.tabArea.currentIndex()
         wgt=self.tabArea.currentWidget().widget()
@@ -186,6 +213,10 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 else:
                     cre-=float(credit)
                 show_credit.setText('已选学分 '+str(cre))
+                if cre>limit:
+                    show_credit.setStyleSheet('''color:red;''')
+                else:
+                    show_credit.setStyleSheet('''color:black;''')
                 print(cre)
 
     def toolbar_triggered(self, tool):
@@ -238,9 +269,9 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         to_index=target_term-1
         course_name=sig['name']
         wgt = self.tabArea.currentWidget().widget()
-        wgt_layout=wgt.layout()
-        from_gb=wgt.layout().itemAt(from_index).widget()
-        to_gb=wgt.layout().itemAt(to_index).widget()
+        # wgt_layout=wgt.layout()
+        # from_gb=wgt.layout().itemAt(from_index).widget()
+        # to_gb=wgt.layout().itemAt(to_index).widget()
         course_node_num=self.current_course_graph.find_ver_num_by_name(course_name)
         if to_index>from_index:
             mode='after'
@@ -252,7 +283,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             need=[]
             need +=self.current_course_graph.find_all_pre(course_node_num)
             need+=[course_node_num]
-        course_plan=self.get_course_plan(wgt)
+        course_plan,chosen=self.get_course_plan(wgt)
         plan=topoSort(self.current_course_graph,need_change=need,limit_term=to_index,base=course_plan,mode=mode)
         if plan:
             tab_index = self.tabArea.currentIndex()
@@ -261,10 +292,10 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         else:
             return
         if sig['credit']!=0:
-            self.update_credit(from_index)
-            self.update_credit(to_index)
+            self.update_group_box(from_index)
+            self.update_group_box(to_index)
 
-    def update_credit(self,index:int):
+    def update_group_box(self, index:int,limit=TERM_LIMITATION):
         wgt = self.tabArea.currentWidget().widget()
         wgt_layout = wgt.layout()
         sum=0
@@ -273,7 +304,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         drag=target_gb.layout().itemAt(1).widget()
         drag_layout=drag.layout
         s=drag.layout.count()
-
         for i in range(s):
             unit=drag_layout.itemAt(i).widget()
             cre=unit.layout().itemAt(1).widget()
@@ -282,7 +312,8 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             if check.checkState():
                 print("adding"+cre.text())
                 sum+=float(cre.text())
-
+        if sum>limit:
+            credit_label.setStyleSheet('''color:red;''')
         if sum==float(credit_label.text()[5:]):
             return
         credit_label.setText('已选学分 '+str(sum))
@@ -358,8 +389,9 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
         self.current_course_graph=self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
-        self.working_major=major_name
-        self.unsaved_plan[plan_name]=major_name
+        # self.working_major=major_name
+        self.working_plan[plan_name]={"major":major_name, "credit_limit":TERM_LIMITATION, "min_term_num":len(plan), "limit_term_num":len(plan)}
+        # self.unsaved_plan[plan_name]=major_name
         self.display_plan(plan,plan_name)
 
     def build_courses_graph(self, major_name):
@@ -378,7 +410,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                                     where c.courseId=p.courseID 
                                     group by p.courseID 
                                     order by num;''')
-        # print('again!!!')
         for row2 in cursor:
             # print(row2)
             c = course.course(row2[0], row2[2], row2[3], row2[4], row2[5], row2[6])
@@ -388,12 +419,10 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         for row in cursor:
             courseID = row[0]
             preID = row[1]
-            # print(row[0]+" "+row[1])
             after_index = g.find_ver_by_ID(courseID)
             pre_index = g.find_ver_by_ID(preID)
 
             if pre_index!=-1 and after_index!=-1:  # out degree (pre_index course) in link
-                # g.graph[pre_index].append(after_index)
                 g.add_edge(pre_index, after_index)
         return g
 
