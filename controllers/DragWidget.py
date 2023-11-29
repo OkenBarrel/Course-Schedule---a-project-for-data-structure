@@ -10,7 +10,7 @@ class DragWidget(QWidget):
         self.setAcceptDrops(True)
         self.layout =QVBoxLayout()
         self.setLayout(self.layout)
-        self.setStyleSheet("""QWidget{background:aqua;}""")
+        self.setStyleSheet(""".QWidget{border:2px solid green;}""")
 
     def addWidget(self ,widget):
         self.layout.addWidget(widget)

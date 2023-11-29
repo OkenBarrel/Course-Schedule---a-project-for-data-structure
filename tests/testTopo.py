@@ -104,13 +104,6 @@ class test_topoSort(unittest.TestCase):
         res=self.g.find_all_pre(18)
         res+=[18]
         print(res)
-        # plan = topoSort.topoSort(self.g,res,limit_term=4,mode='before')
-        # length = len(plan)
-        #
-        # for term in range(length):
-        #     print('term' + str(term + 1))
-        #     for c in plan[term]:
-        #         print(c)
 
     def test_topoSort_with_courses_graph_with_no_custom_setting(self):
         res=topoSort.topoSort(self.g)

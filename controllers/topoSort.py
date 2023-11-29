@@ -7,7 +7,7 @@ VISITED=1
 
 
 # TODO 查bug！
-def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit=17.5,mode='',base=[],chosen=[]):
+def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit=17.5,mode='',base=[],limited_terms={}):
 
     l=len(lnkGraph.graph)
     res=[]
@@ -24,49 +24,49 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
     need_plan=[]
     flag = 0
     # TODO after的话从后面找，优先靠后的排，因为如果是后面的话可能不需要挪动
-    wait=[]
-    if mode=='credit':
-        for index,term in enumerate(base):
-            for course in term:
-                credit += float(course.credit)
-                if credit>limit_credit:
-                    res.append(temp)
-                    temp=[]
-                    credit=0
-                else:
-                    num=lnkGraph.find_ver_num_by_name(course)
-                    no=[lnkGraph.find_next_after(c.name)for c in temp]
-                    if num not in no:
-                        temp.append(course)
-                    else:
-                        wait.append(course)
-            if wait:
-                base[index+1]=wait+base[index+1]
-                wait=[]
-        return res
-
-    if base!=[]:
+    # wait=[]
+    # if mode=='credit':
+    #     for index,term in enumerate(base):
+    #         for course in term:
+    #             credit += float(course.credit)
+    #             if credit>limit_credit:
+    #                 res.append(temp)
+    #                 temp=[]
+    #                 credit=0
+    #             else:
+    #                 num=lnkGraph.find_ver_num_by_name(course)
+    #                 no=[lnkGraph.find_next_after(lnkGraph.find_ver_num_by_name(c.name))for c in temp]
+    #                 if num not in no:
+    #                     temp.append(course)
+    #                 else:
+    #                     wait.append(course)
+    #         if wait:
+    #             base[index+1]=wait+base[index+1]
+    #             wait=[]
+    #     res.append(temp)
+    #     return res
+    if base:
         need_plan=[[c for c in t if lnkGraph.find_ver_num_by_name(c.name) in need_change] for t in base]
-        base=[[c for c in x if lnkGraph.find_ver_num_by_name(c.name) not in need_change] for x in base]
-        if not base[limit_term-1]:
+        base=[[c for c in x if lnkGraph.find_ver_num_by_name(c.name) not in need_change and c.name not in limited_terms] for x in base]
+        if not limited_terms and not base[limit_term-1]:
             print("plan is too short! cant make it")
             return -1
     credits=[[float(c.credit) for c in term] for term in base]
     credits=[float(sum(term)) for term in credits]
 
-    if mode:
+    if mode=='after' or mode=='before':
         for e in range(l):
             if indegree[e]==0:
                 in0.push(e)
         while not in0.is_empty() or not next.is_empty():
-            if change:
-                bl=True
-                for index,a in enumerate(indegree):
-                    if index not in need_change:
-                        bl=bl and visited[index] and visited[need_change[0]]==0
-                if bl:
-                    print("the plan can't be made!!")
-                    return False
+            # if change:
+            #     bl=True
+            #     for index,a in enumerate(indegree):
+            #         if index not in need_change:
+            #             bl=bl and visited[index] and visited[need_change[0]]==0
+            #     if bl:
+            #         print("the plan can't be made!!")
+            #         return False
             while not in0.is_empty():
                 ver = in0.dequeue()
                 course = lnkGraph.graph[ver].head.ele
@@ -81,6 +81,7 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
                         partial.append(temp1)
                         temp1 = [course]
                         credit = float(course.credit)
+
                     if course.compulsory and mode=='after':
                         if flag + limit_term >= len(credits):
                             credits.append(0.0)
@@ -146,6 +147,10 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
         for index in range(m-1,-1,-1):
             if index-limit_term<=0:break
             need_plan[index]+=[course for course in partial[index-limit_term] if course not in need_plan[index]]
+            for ind,term in enumerate(partial): # put it in need_plan; del it in need_plan
+                if ind==index-limit_term: break
+                if not partial[ind]: continue
+                partial[ind]=[c for c in term if c not in need_plan[index]]
             for ind,term in enumerate(need_plan): # put it in need_plan; del it in need_plan
                 if ind==index: break
                 if not need_plan[ind]: continue
@@ -153,7 +158,7 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
     elif mode=='before':
         if len(partial)>limit_term+1:
             print("too long! cant make it")
-            return False
+            return 0
         need_len=len(need_plan)
         par_len=len(partial)
         gap=limit_term-par_len+1
@@ -164,9 +169,10 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
                 partial=[[c for c in t if c not in need_plan[i]] for t in partial]
                 continue
             need_plan[i]+=[c for c in partial[i-gap] if c not in need_plan[i]]
+            partial[i-gap:]=[[cc for cc in t if cc not in need_plan[i]] for t in partial[i-gap:]]
             need_plan[i+1:]=[[cc for cc in t if cc not in need_plan[i]] for t in need_plan[i+1:]]
 
-    if mode:
+    if mode=='after' or mode=='before':
         res=base[:]
         for ii,t in enumerate(need_plan):
             if ii>=len(res):
@@ -185,6 +191,9 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
             ver = in0.dequeue()
             course = lnkGraph.graph[ver].head.ele
             node = lnkGraph.graph[ver].head.next
+            if course.name in limited_terms and flag<limited_terms[course.name]:
+                next.push(ver)
+                continue
             if course.compulsory and not visited[ver]:
                 if flag<len(credits):
                     credits[flag] += float(course.credit)
@@ -247,3 +256,26 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
             print("Error!!!")
             return False
     return res
+
+def is_topo(plan,lnkGraph:lnkGraph):
+    term = len(plan)
+    check = []
+    no = []
+    conflict=[]
+    for t in range(term - 1, -1, -1):
+        for course in plan[t]:
+            num = lnkGraph.find_ver_num_by_name(course.name)
+            no = list(set(lnkGraph.find_all_pre(num)))
+            # no=list(set(no))
+            for ind in range(t, term):
+                temp=[c.name for c in plan[ind] if lnkGraph.find_ver_num_by_name(c.name) in no]
+                if temp:
+                    conflict+=temp
+                    conflict.append(course.name)
+                # check += temp
+            # if check:
+            #     conflict+=temp
+            #     conflict.append(course.name)
+    if conflict:
+        return False,conflict
+    return True

@@ -1,7 +1,7 @@
 import os,sys
 from PyQt5.QtGui import QIcon,QFontMetricsF
 from PyQt5.QtCore import pyqtSignal,Qt,QCoreApplication
-from PyQt5.QtWidgets import QFormLayout,QFrame,QLabel,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,\
+from PyQt5.QtWidgets import QFrame,QFormLayout,QFrame,QLabel,QDialog,QScrollArea,QCheckBox,QWidget,QVBoxLayout,\
                             QGroupBox,QLineEdit,QInputDialog,QMessageBox,QTabWidget,QComboBox,QAction,QPushButton,\
                             QMainWindow,QHBoxLayout,QDockWidget
 from utils import formatting
@@ -30,16 +30,19 @@ class Ui_MainWindow(QMainWindow):
         self.credit_limit.setFixedWidth(120)
         self.credit_limit.setPlaceholderText('default: 17.5')
         self.no_butt = QPushButton("再次排序")
+        self.preview=QCheckBox('预览模式')
 
         self.dock=QDockWidget("settings")
         form=QFormLayout()
         # TODO !!
         form.addRow("学期最大\n修读学分",self.credit_limit)
+
         wgt=QWidget()
         dock_layout=QVBoxLayout()
         dock_layout.addWidget(self.yes_butt)
         dock_layout.addWidget(self.no_butt)
         dock_layout.addLayout(form)
+        dock_layout.addWidget(self.preview)
 
         wgt.setStyleSheet("""
             .QWidget {background:#545d64;}
@@ -49,7 +52,7 @@ class Ui_MainWindow(QMainWindow):
         self.dock.setWidget(wgt)
 
         self.tabArea=QTabWidget()
-        print('tabArea h = '+str(self.tabArea.size().height())+'  w = '+str(self.tabArea.size().width()))
+        # print('tabArea h = '+str(self.tabArea.size().height())+'  w = '+str(self.tabArea.size().width()))
 
         self.tabArea.setTabsClosable(True)
 
@@ -110,7 +113,7 @@ class Ui_MainWindow(QMainWindow):
         return self.input_popup(title,prompt,item_list,'item')
 
     # TODO display_plan: compulsory courses should be in better style
-    def display_plan(self,plan:list,tab_name:str,chosen=False,repaint=False,chosen_list=[]):
+    def display_plan(self,plan:list,tab_name:str,repaint=False,chosen_list=[],only_chosen=False,conflict=[],preview=False):
         if not repaint:
             new_tab=QScrollArea()
             self.tabArea.addTab(new_tab,tab_name)
@@ -138,35 +141,33 @@ class Ui_MainWindow(QMainWindow):
                 check=QCheckBox(parent=inner_wgt)
                 if el.name in chosen_list:
                     check.setChecked(True)
+                # elif el.name not in chosen_list and only_chosen:
+                #     continue
                 inner_layout.addWidget(check)
                 credit_label = QLabel(parent=inner_wgt)
                 name_label = QLabel(parent=inner_wgt)
-                # if chosen:
-                #     course = el[0]
-                #     wrapped_word=formatting.word_wrap(course.name,195,QFontMetricsF(check.font()).width("新"))
-                #     credit_text=course.credit
-                #     is_chosen = el[1]
-                #     if course.compulsory:
-                #         inner_wgt.setStyleSheet('''.QLabel{color:red;}''')
-                #         check.setEnabled(False)
-                #     if is_chosen:
-                #         check.setChecked(True)
-                #         credits += float(course.credit)
-                # else:
                 wrapped_word=formatting.word_wrap(el.name,195,QFontMetricsF(check.font()).width("新"))
                 credit_text=el.credit
+                frame=QFrame()
                 if el.compulsory:
                     inner_wgt.setStyleSheet('''.QLabel{color:red;}''')
-                    # check.setChecked(True)
+                    check.setChecked(True)
                     check.setEnabled(False)
                     credits += float(el.credit)
                 credit_label.setText(credit_text)
                 credit_label.setEnabled(False)
                 name_label.setText(wrapped_word)
                 name_label.setEnabled(False)
+                if el.name in conflict:
+
+                    inner_wgt.setStyleSheet('''.QWidget{background:orange;border: 2px solid red;}
+                                                .QLabel{background:orange;}''')
+                    # inner_wgt.setStyleSheet('''.QLabel{background:red;}''')
                 inner_layout.addWidget(credit_label)
                 inner_layout.addWidget(name_label)
                 inner_wgt.setLayout(inner_layout)
+                if preview and el.name not in chosen_list:
+                    inner_wgt.setVisible(False)
                 drag_widget.addWidget(inner_wgt)
                 check.stateChanged.connect(partial(self.checkbox_change, wrapped_word.replace('\n', ''), cnt_term - 1, credit_text))
             drag_widget.drop.connect(partial(self.drop, cnt_term - 1))

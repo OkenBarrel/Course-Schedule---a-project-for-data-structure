@@ -21,9 +21,10 @@ config={
     ]
 }
 di={'what':2,'the':2,'fuck':2}
+d2={'are':3}
 # print('what' in di)
 s='012345678'
 li=[1,1,1,1,1,1]
 li=[2]+li
-print(list(li))
+print(di+d2)
 # print(li)

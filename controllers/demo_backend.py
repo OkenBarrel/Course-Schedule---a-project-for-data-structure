@@ -1,11 +1,11 @@
 import os.path
 from PyQt5.QtWidgets import QGridLayout,QWidget,QLabel,QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
 from views import demo
-from PyQt5.QtCore import QMimeData,QEvent,pyqtSignal
+from PyQt5.QtCore import Qt,QEvent,pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent,QDrag,QMouseEvent
 from utils import DB,files2db
 from models import course,lnkGraph
-from .topoSort import topoSort
+from .topoSort import topoSort,is_topo
 from .DragWidget import DragWidget
 import json,os,sys,copy
 
@@ -126,9 +126,21 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             if event.type() == QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
                 print("topo again!!")
                 wgt = self.tabArea.currentWidget().widget()
+                tab = self.tabArea
+                plan_name = tab.tabText(tab.currentIndex())
                 plan,chosen= self.get_course_plan(wgt)
-                limit_credit=float(self.credit_limit.text())
-                topoSort(self.current_course_graph,limit_credit=limit_credit)
+                limit_credit=17.5
+                limited_terms={}
+                cnt=0
+                for index,term in enumerate(plan):
+                    for c in term:
+                        if not self.current_course_graph.indegree[cnt]:
+                            limited_terms[c.name]=index
+                        cnt+=1
+                if self.credit_limit.text():
+                    limit_credit=float(self.credit_limit.text())
+                plan_after=topoSort(self.current_course_graph,limit_credit=limit_credit,mode='credit',base=plan,limited_terms=limited_terms)
+                self.display_plan(plan_after,plan_name,repaint=True,chosen_list=chosen)
         return False
     # without 'return False' the app will simply freeze
 
@@ -140,6 +152,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.open_combo.connect(self.combo_activated_triggered)
         self.tabArea.tabCloseRequested.connect(self.tab_close_triggered)
         self.tabArea.currentChanged.connect(self.tab_changing)
+        self.preview.stateChanged.connect(self.set_preview)
 
         # self.mng.triggered[QAction].connect(self.menu_triggered)
         # self.mng_plan.triggered[QAction].connect(self.menu_triggered)
@@ -176,13 +189,14 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 # credit_label = wgt_layout.itemAt(1).widget()
                 name_label=wgt_layout.itemAt(2).widget()
                 name=name_label.text().replace('\n','')
-                if check.checkState():
+                if check.checkState()==Qt.Checked:
                     chosen.append(name)
                 course=self.current_course_graph.find_ver_by_name(name)
                 # id = DB.get_courseID(name, self.cur, major_name)
                 temp.append(course)
             plan.append(temp)
         return plan,chosen
+
     def combo_activated_triggered(self, index):
         combo=self.toolbar.findChild(QComboBox)
         plan_name=combo.itemText(index)
@@ -285,15 +299,21 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             need+=[course_node_num]
         course_plan,chosen=self.get_course_plan(wgt)
         plan=topoSort(self.current_course_graph,need_change=need,limit_term=to_index,base=course_plan,mode=mode)
-        if plan:
-            tab_index = self.tabArea.currentIndex()
-            tab_name = self.tabArea.tabText(tab_index)
-            self.display_plan(plan, tab_name, repaint=True)
+        tab_index = self.tabArea.currentIndex()
+        tab_name = self.tabArea.tabText(tab_index)
+        if type(plan) is not int:
+            self.display_plan(plan, tab_name, repaint=True,chosen_list=chosen)
+        elif plan==0:
+            plan2,_ = self.get_course_plan(wgt)
+            flag,conflict = is_topo(plan2, self.current_course_graph)
+            self.display_plan(plan2,tab_name,repaint=True,chosen_list=chosen,conflict=conflict)
+            print("is topo or not: " + str(flag))
         else:
             return
         if sig['credit']!=0:
             self.update_group_box(from_index)
             self.update_group_box(to_index)
+        return
 
     def update_group_box(self, index:int,limit=TERM_LIMITATION):
         wgt = self.tabArea.currentWidget().widget()
@@ -461,6 +481,28 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     # TODO tab_close_triggered: put plan into database when closing
     def tab_close_triggered(self, index):
         self.tabArea.removeTab(index)
+
+    def set_preview(self,state):
+        if state==2:
+            print("preview")
+            wgt = self.tabArea.currentWidget().widget()
+            tab = self.tabArea
+            tab_index = tab.currentIndex()
+            tab_name = tab.tabText(tab_index)
+            plan_name = tab.tabText(tab.currentIndex())
+            plan,chosen=self.get_course_plan(wgt)
+            self.display_plan(plan,tab_name,True,chosen,preview=True)
+
+        else:
+            wgt = self.tabArea.currentWidget().widget()
+            tab = self.tabArea
+            tab_index = tab.currentIndex()
+            tab_name = tab.tabText(tab_index)
+            plan_name = tab.tabText(tab.currentIndex())
+            plan, chosen = self.get_course_plan(wgt)
+            self.display_plan(plan, tab_name, True, chosen, preview=False)
+            print("not preview")
+
 
     # def yes_butt_clicked(self):
     #     print("yes!")
