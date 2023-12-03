@@ -81,10 +81,9 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
                         partial.append(temp1)
                         temp1 = [course]
                         credit = float(course.credit)
-
+                    if flag + limit_term >= len(credits):
+                        credits.append(0.0)
                     if course.compulsory and mode=='after':
-                        if flag + limit_term >= len(credits):
-                            credits.append(0.0)
                         credits[flag+limit_term] += float(course.credit)
                     if credits[flag+limit_term] <= limit_credit and mode=='after':
                         temp1.append(course)
@@ -179,6 +178,7 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
                 res.append(need_plan[ii])
             else:
                 res[ii]+=list(need_plan[ii])
+        res=[t for t in res if t]
         return res
 
     indegree=lnkGraph.indegree[:]
@@ -199,9 +199,14 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
                     credits[flag] += float(course.credit)
                 else:
                     credits.append(float(course.credit))
-            if credits[flag] <= limit_credit and not visited[ver]:
+            # elif not course.compulsory and not visited[ver]:
+            #     if flag<len(credits):
+            #         credits[flag] += float(course.credit)
+            #     else:
+            #         credits.append(float(course.credit))
+            if course.compulsory and credits[flag] <= limit_credit and not visited[ver] or not course.compulsory and len(temp)<=10:
                 temp.append(course)
-            elif not visited[ver]:
+            else:
                 res.append(temp)
                 temp = [course]
                 flag+=1
@@ -250,12 +255,13 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
             if not in0.is_in(t):
                 in0.push(t)
     res.append(temp)
-
+    res=[t for t in res if t]
     for ind in visited:
         if ind==UNVISITED:
             print("Error!!!")
             return False
     return res
+
 
 def is_topo(plan,lnkGraph:lnkGraph):
     term = len(plan)
@@ -266,16 +272,11 @@ def is_topo(plan,lnkGraph:lnkGraph):
         for course in plan[t]:
             num = lnkGraph.find_ver_num_by_name(course.name)
             no = list(set(lnkGraph.find_all_pre(num)))
-            # no=list(set(no))
             for ind in range(t, term):
                 temp=[c.name for c in plan[ind] if lnkGraph.find_ver_num_by_name(c.name) in no]
                 if temp:
                     conflict+=temp
                     conflict.append(course.name)
-                # check += temp
-            # if check:
-            #     conflict+=temp
-            #     conflict.append(course.name)
     if conflict:
         return False,conflict
     return True

@@ -52,21 +52,19 @@ class Ui_MainWindow(QMainWindow):
         self.dock.setWidget(wgt)
 
         self.tabArea=QTabWidget()
-        # print('tabArea h = '+str(self.tabArea.size().height())+'  w = '+str(self.tabArea.size().width()))
 
         self.tabArea.setTabsClosable(True)
 
         self.setCentralWidget(self.tabArea)
-        # self.dock.resize(600, self.height())
         self.addDockWidget(Qt.LeftDockWidgetArea,self.dock)
 
         self.toolbar=self.addToolBar("Toolbar")
         print('working dir in views: '+working_dir)
-        new = QAction(QIcon(working_dir+"/views/v.png"), '导入课程', self)
+        new = QAction(QIcon(working_dir+"/views/import.xpm"), '导入课程', self)
         self.toolbar.addAction(new)
-        open=QAction(QIcon(working_dir+"/views/sina.xpm"),'open',self)
+        open=QAction(QIcon(working_dir+"/views/create.png"),'创建计划',self)
         self.toolbar.addAction(open)
-        delete_plan=QAction('delete plan',self)
+        delete_plan=QAction(QIcon(working_dir+'/views/delete.xpm'),'删除计划',self)
         self.toolbar.addAction(delete_plan)
         self.toolbar.addWidget(QComboBox())
 
@@ -159,13 +157,12 @@ class Ui_MainWindow(QMainWindow):
                 name_label.setText(wrapped_word)
                 name_label.setEnabled(False)
                 if el.name in conflict:
-
                     inner_wgt.setStyleSheet('''.QWidget{background:orange;border: 2px solid red;}
                                                 .QLabel{background:orange;}''')
-                    # inner_wgt.setStyleSheet('''.QLabel{background:red;}''')
                 inner_layout.addWidget(credit_label)
                 inner_layout.addWidget(name_label)
                 inner_wgt.setLayout(inner_layout)
+                inner_wgt.setToolTip(f"课程编码：{el.courseID}\n考核方式：{el.final}\n开课单位：{el.department}")
                 if preview and el.name not in chosen_list:
                     inner_wgt.setVisible(False)
                 drag_widget.addWidget(inner_wgt)

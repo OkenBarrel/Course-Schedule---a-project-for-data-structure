@@ -1,8 +1,7 @@
 import os.path
-from PyQt5.QtWidgets import QGridLayout,QWidget,QLabel,QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
+from PyQt5.QtWidgets import QWidget,QLabel,QDialog,QComboBox,QCheckBox,QGroupBox,QMessageBox,QFileDialog,QAction,QMainWindow
 from views import demo
 from PyQt5.QtCore import Qt,QEvent,pyqtSignal
-from PyQt5.QtGui import QDragEnterEvent,QDrag,QMouseEvent
 from utils import DB,files2db
 from models import course,lnkGraph
 from .topoSort import topoSort,is_topo
@@ -45,57 +44,24 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.yes_butt.installEventFilter(self)
         self.no_butt.installEventFilter(self)
 
-    # def get_plan_from_widget(self,widget:QWidget,major_name):
-    #     plan=[]
-    #
-    #     for child in widget.findChildren(QGroupBox):
-    #         temp=[]
-    #         drag_widget=child.findChild(DragWidget)
-    #         cnt=drag_widget.layout.count()
-    #         for w in range(cnt):
-    #             wgt=drag_widget.layout.itemAt(w).widget()
-    #             wgt_layout=wgt.layout()
-    #             check=wgt_layout.itemAt(0).widget()
-    #             credit_label = wgt_layout.itemAt(1).widget()
-    #             name_label=wgt_layout.itemAt(2).widget()
-    #             name=name_label.text().replace('\n','')
-    #             id = DB.get_courseID(name, self.cur, major_name)
-    #             temp.append((id,check.checkState()))
-    #         # layout = child.layout().itemAt(1)
-    #         # row = layout.rowCount()
-    #         # for r in range(row):
-    #         #     check = layout.itemAtPosition(r, 0)
-    #         #     name_label = layout.itemAtPosition(r,2).widget()
-    #         #     print(type(name_label))
-    #         #     name=name_label.text().replace('\n','')
-    #         #     id = DB.get_courseID(name, self.cur, major_name)
-    #         #     temp.append((id,check.widget().checkState()))
-    #         # for grand in child.findChildren(QCheckBox):
-    #         #     name=grand.text().replace('\n','')
-    #         #     print(name)
-    #         #     id=DB.get_courseID(name.split(' ')[1],self.cur,major_name)
-    #         #     temp.append((id,grand.checkState()))
-    #         plan.append(temp)
-    #     return plan
-
     def eventFilter(self,watched,event):
         if watched==self.yes_butt:
             if event.type()==QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
-                print("yes!!")
+                # print("yes!!")
                 wgt=self.tabArea.currentWidget().widget()
                 tab=self.tabArea
                 plan_name=tab.tabText(tab.currentIndex())
-                print(plan_name)
+                # print(plan_name)
                 combo = self.toolbar.findChild(QComboBox)
-                print('guess if im in'+str(combo.findText(plan_name)))
+                # print('guess if im in'+str(combo.findText(plan_name)))
                 if combo.findText(plan_name)==-1:
                     combo.addItem(plan_name)
                 plans_in_config=[p['name'] for p in self.config['plans']]
-                if self.credit_limit.text()=='':
-                    limitation=TERM_LIMITATION
-                else:
-                    limitation=float(self.credit_limit.text())
-                print('limitation: '+str(limitation))
+                # if self.credit_limit.text()=='':
+                #     limitation=TERM_LIMITATION
+                # else:
+                #     limitation=float(self.credit_limit.text())
+                # print('limitation: '+str(limitation))
                 if plan_name not in plans_in_config:
                     plan_id = self.config['global_id'] + 1
                     self.config['global_id'] += 1
@@ -103,11 +69,12 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                         'id': plan_id,
                         'name': plan_name,
                         'major':self.working_plan[plan_name]['major'],
-                        "credit_limit": limitation,
+                        "credit_limit": self.working_plan[plan_name]['credit_limit'],
                         "min_term_num": self.working_plan[plan_name]['min_term_num'],
                         "limit_term_num": self.working_plan[plan_name]['limit_term_num']
                     })
                     major_name=self.working_plan[plan_name]['major']
+                    del self.working_plan[plan_name]
 
                 for p in self.config['plans']:
                     if p['name']==plan_name:
@@ -117,7 +84,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 plan,chosen=self.get_course_plan(wgt)
                 if DB.plan2DB(plan,self.db,self.cur,plan_id,chosen):
                     print(self.working_plan)
-                    # del self.unsaved_plan[plan_name]
                     return True
                 else:
                     return False
@@ -125,22 +91,34 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
             # TODO 每学期修读时间可能不排序只计算学分和然后分到一起，然后检查是否符合？
             if event.type() == QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
                 print("topo again!!")
+                print(self.working_plan)
                 wgt = self.tabArea.currentWidget().widget()
                 tab = self.tabArea
                 plan_name = tab.tabText(tab.currentIndex())
                 plan,chosen= self.get_course_plan(wgt)
                 limit_credit=17.5
-                limited_terms={}
-                cnt=0
-                for index,term in enumerate(plan):
-                    for c in term:
-                        if not self.current_course_graph.indegree[cnt]:
-                            limited_terms[c.name]=index
-                        cnt+=1
                 if self.credit_limit.text():
-                    limit_credit=float(self.credit_limit.text())
-                plan_after=topoSort(self.current_course_graph,limit_credit=limit_credit,mode='credit',base=plan,limited_terms=limited_terms)
+                    limit_credit = float(self.credit_limit.text())
+                try:
+                    plan_config=[x for x in self.config['plans'] if x['name']==plan_name][0]
+                except IndexError as e:
+                    plan_config=self.working_plan[plan_name]
+                if plan_config['credit_limit']<limit_credit:
+                    another_graph=copy.deepcopy(self.current_course_graph)
+                    term=len(plan)
+                    for t in range(1,term):
+                        for c in plan[t]:
+                            num=self.current_course_graph.find_ver_num_by_name(c.name)
+                            if self.current_course_graph.indegree[num]==0:
+                                nums=[self.current_course_graph.find_ver_num_by_name(cc.name) for cc in plan[t-1]]
+                                for n in nums:
+                                    another_graph.add_edge(n,num)
+                    plan_after = topoSort(another_graph, limit_credit=limit_credit)
+                else:
+                    plan_after = topoSort(self.current_course_graph, limit_credit=limit_credit)
+                plan_config['credit_limit'] = limit_credit
                 self.display_plan(plan_after,plan_name,repaint=True,chosen_list=chosen)
+                print(self.working_plan)
         return False
     # without 'return False' the app will simply freeze
 
@@ -244,7 +222,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 return
             pdf_path = open_file[0]
             self.import_courses(pdf_path)
-        elif tool.text()== 'open':
+        elif tool.text()== '创建计划':
             if len(self.config['majors'])==0:
                 # print("zero")
                 msg3_title='警告'
@@ -253,7 +231,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                 return
             print("open")
             self.create_plan()
-        elif tool.text()=='delete plan':
+        elif tool.text()=='删除计划':
             new=Pop_up('testing',[p['name'] for p in self.config['plans']])
             new.results.connect(self.delete_plan)
             res=new.exec_()
@@ -319,6 +297,7 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         wgt = self.tabArea.currentWidget().widget()
         wgt_layout = wgt.layout()
         sum=0
+        print(index)
         target_gb=wgt_layout.itemAt(index).widget()
         credit_label=target_gb.layout().itemAt(0).widget()
         drag=target_gb.layout().itemAt(1).widget()
@@ -410,7 +389,10 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         self.current_course_graph=self.build_courses_graph(major_name)
         plan=topoSort(self.current_course_graph)
         # self.working_major=major_name
-        self.working_plan[plan_name]={"major":major_name, "credit_limit":TERM_LIMITATION, "min_term_num":len(plan), "limit_term_num":len(plan)}
+        self.working_plan[plan_name]={"major":major_name,
+                                      "credit_limit":TERM_LIMITATION,
+                                      "min_term_num":len(plan),
+                                      "limit_term_num":len(plan)}
         # self.unsaved_plan[plan_name]=major_name
         self.display_plan(plan,plan_name)
 
@@ -480,7 +462,14 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
 
     # TODO tab_close_triggered: put plan into database when closing
     def tab_close_triggered(self, index):
+        print('deleting '+str(index))
+        plan_name=self.tabArea.tabText(index)
+        try:
+            del self.working_plan[plan_name]
+        except KeyError as e:
+            pass
         self.tabArea.removeTab(index)
+        return
 
     def set_preview(self,state):
         if state==2:
