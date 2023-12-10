@@ -27,4 +27,9 @@ s='012345678'
 li=[1,1,1,1,1,1]
 li=[2]+li
 print(di+d2)
-# print(li)
+
+config={"global_id": 37,
+ "majors": ["\u8ba1\u7b97\u673a"],
+ "plans": [{"id": 36, "name": "testing", "major": "\u8ba1\u7b97\u673a", "credit_limit": 17.5},
+           {"id": 37, "name": "345345", "major": "\u8ba1\u7b97\u673a", "credit_limit": 17.5}]
+ }

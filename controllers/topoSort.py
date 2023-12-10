@@ -23,28 +23,7 @@ def topoSort(lnkGraph:lnkGraph.lnkGraph,need_change=[],limit_term=0,limit_credit
     change=len(need_change)
     need_plan=[]
     flag = 0
-    # TODO after的话从后面找，优先靠后的排，因为如果是后面的话可能不需要挪动
-    # wait=[]
-    # if mode=='credit':
-    #     for index,term in enumerate(base):
-    #         for course in term:
-    #             credit += float(course.credit)
-    #             if credit>limit_credit:
-    #                 res.append(temp)
-    #                 temp=[]
-    #                 credit=0
-    #             else:
-    #                 num=lnkGraph.find_ver_num_by_name(course)
-    #                 no=[lnkGraph.find_next_after(lnkGraph.find_ver_num_by_name(c.name))for c in temp]
-    #                 if num not in no:
-    #                     temp.append(course)
-    #                 else:
-    #                     wait.append(course)
-    #         if wait:
-    #             base[index+1]=wait+base[index+1]
-    #             wait=[]
-    #     res.append(temp)
-    #     return res
+
     if base:
         need_plan=[[c for c in t if lnkGraph.find_ver_num_by_name(c.name) in need_change] for t in base]
         base=[[c for c in x if lnkGraph.find_ver_num_by_name(c.name) not in need_change and c.name not in limited_terms] for x in base]

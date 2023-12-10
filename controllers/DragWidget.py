@@ -49,6 +49,16 @@ class DragWidget(QWidget):
         if source_drag_widget==self:
             return
         credits_label=self.parent().layout().itemAt(0).widget()
+        big= self.parent().parent()
+        term_cnt=big.layout().count()
+        source_index =int(source_drag_widget.drag.mimeData().text())
+        source_term=int(source_drag_widget.parent().title()[4:])
+        target_term=int(self.parent().title()[4:])
+        print('from '+str(source_term)+" to "+str(target_term))
+        if (source_term!=0 or source_term!=term_cnt-1) and source_term<target_term and source_drag_widget.layout.count()==1:
+            self.drop.emit({'no':1})
+            return
+
         cre=float(credits_label.text()[5:])
         if cre>=17.5:
             return
@@ -56,7 +66,6 @@ class DragWidget(QWidget):
         target_item =self.childAt(target_pos)
         while type(target_item )!=QWidget:
             target_item= target_item.parent()
-        source_index =int(source_drag_widget.drag.mimeData().text())
         old_item = source_drag_widget.takeAt(source_index).widget()
         while type(old_item)!=QWidget:
             old_item =old_item.parent()

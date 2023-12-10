@@ -47,21 +47,13 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
     def eventFilter(self,watched,event):
         if watched==self.yes_butt:
             if event.type()==QEvent.MouseButtonPress and self.tabArea.isTabEnabled(self.tabArea.currentIndex()):
-                # print("yes!!")
                 wgt=self.tabArea.currentWidget().widget()
                 tab=self.tabArea
                 plan_name=tab.tabText(tab.currentIndex())
-                # print(plan_name)
                 combo = self.toolbar.findChild(QComboBox)
-                # print('guess if im in'+str(combo.findText(plan_name)))
                 if combo.findText(plan_name)==-1:
                     combo.addItem(plan_name)
                 plans_in_config=[p['name'] for p in self.config['plans']]
-                # if self.credit_limit.text()=='':
-                #     limitation=TERM_LIMITATION
-                # else:
-                #     limitation=float(self.credit_limit.text())
-                # print('limitation: '+str(limitation))
                 if plan_name not in plans_in_config:
                     plan_id = self.config['global_id'] + 1
                     self.config['global_id'] += 1
@@ -69,9 +61,9 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                         'id': plan_id,
                         'name': plan_name,
                         'major':self.working_plan[plan_name]['major'],
-                        "credit_limit": self.working_plan[plan_name]['credit_limit'],
-                        "min_term_num": self.working_plan[plan_name]['min_term_num'],
-                        "limit_term_num": self.working_plan[plan_name]['limit_term_num']
+                        "credit_limit": self.working_plan[plan_name]['credit_limit']#,
+                        # "min_term_num": self.working_plan[plan_name]['min_term_num'],
+                        # "limit_term_num": self.working_plan[plan_name]['limit_term_num']
                     })
                     major_name=self.working_plan[plan_name]['major']
                     del self.working_plan[plan_name]
@@ -80,7 +72,6 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
                     if p['name']==plan_name:
                         plan_id=p['id']
                         major_name=p['major']
-                # plan = self.get_plan_from_widget(wgt,major_name)
                 plan,chosen=self.get_course_plan(wgt)
                 if DB.plan2DB(plan,self.db,self.cur,plan_id,chosen):
                     print(self.working_plan)
@@ -256,6 +247,11 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         '''
         if sig['credit']==0 it means that changed course is not chosen
         '''
+        if 'no' in sig:
+            msg4_title = '警告'
+            msg4_text = '无效，请不要轮空学期'
+            self.info_popup(msg4_title, msg4_text)
+            return
         print(str(sig['credit'])+' '+sig['name']+ 'from term' + sig['source_term']+' to term'+str(target_term))
         from_index=int(sig['source_term'])-1
         to_index=target_term-1
@@ -281,10 +277,13 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         tab_name = self.tabArea.tabText(tab_index)
         if type(plan) is not int:
             self.display_plan(plan, tab_name, repaint=True,chosen_list=chosen)
-        elif plan==0:
+        elif plan==0 or plan==-1:
             plan2,_ = self.get_course_plan(wgt)
             flag,conflict = is_topo(plan2, self.current_course_graph)
             self.display_plan(plan2,tab_name,repaint=True,chosen_list=chosen,conflict=conflict)
+            msg5_title = '警告'
+            msg5_text = '出现学期轮空或向前学期数不足，请继续调整'
+            self.info_popup(msg5_title, msg5_text)
             print("is topo or not: " + str(flag))
         else:
             return
@@ -390,11 +389,10 @@ class MainWindow(demo.Ui_MainWindow,QMainWindow):
         plan=topoSort(self.current_course_graph)
         # self.working_major=major_name
         self.working_plan[plan_name]={"major":major_name,
-                                      "credit_limit":TERM_LIMITATION,
-                                      "min_term_num":len(plan),
-                                      "limit_term_num":len(plan)}
+                                      "credit_limit":TERM_LIMITATION}
         # self.unsaved_plan[plan_name]=major_name
         self.display_plan(plan,plan_name)
+        return
 
     def build_courses_graph(self, major_name):
         g=lnkGraph.lnkGraph()
